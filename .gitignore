@@ -1,0 +1,21 @@
+# Node
+node_modules/
+.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# ML Models (optional but recommended)
+*.pkl
+*.h5
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Uploads
+uploads/
+
+data/
