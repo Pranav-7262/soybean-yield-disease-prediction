@@ -7,6 +7,9 @@ venv/
 __pycache__/
 *.pyc
 
+venv311/
+
+
 # ML Models (optional but recommended)
 *.pkl
 
@@ -18,3 +21,6 @@ Thumbs.db
 uploads/
 
 data/
+
+settings.json
+

@@ -1,6 +1,6 @@
 ## 👥 Team Tasks
 
-Each team member is assigned tasks to work on separately. Follow the branch and PR workflow.
+Follow the branch and PR workflow.
 
 ---
 
@@ -24,7 +24,6 @@ Create a branch for your task:
 git checkout -b feature/your-feature
 
 Commit regularly with clear messages:
-
 git add .
 git commit -m "Brief description of your work"
 
