@@ -9,7 +9,6 @@ __pycache__/
 
 # ML Models (optional but recommended)
 *.pkl
-*.h5
 
 # OS files
 .DS_Store
