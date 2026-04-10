@@ -23,29 +23,29 @@ class YieldRequest(BaseModel):
 def home():
     return {"message": "Soybean Agri-AI ML Service is running! ✅"}
 
-# @app.post("/predict/yield")
-# async def predict_yield_api(request: YieldRequest):
-    # try:
-    #     data = {
-    #         "N": request.n,
-    #         "P": request.p,
-    #         "K": request.k,
-    #         "temperature": request.temperature,
-    #         "soil_moisture": request.soil_moisture,
-    #         "rainfall": request.rainfall,
-    #         "ph": request.ph
-    #     }
+@app.post("/predict/yield")
+async def predict_yield_api(request: YieldRequest):
+    try:
+        data = {
+            "N": request.n,
+            "P": request.p,
+            "K": request.k,
+            "temperature": request.temperature,
+            "soil_moisture": request.soil_moisture,
+            "rainfall": request.rainfall,
+            "ph": request.ph
+        }
 
-    #     result = predict_yield(data)
+        result = predict_yield(data)
 
-    #     return {
-    #         "success": True,
-    #         "predicted_yield": round(result, 2),
-    #         "unit": "quintals/acre"
-    #     }
+        return {
+            "success": True,
+            "predicted_yield": round(result, 2),
+            "unit": "quintals/acre"
+        }
 
-    # except Exception as e:
-    #     raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/predict/disease")
 async def predict_disease_api(file: UploadFile = File(...)):
