@@ -1,18 +1,18 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Beaker, Thermometer, Droplets, CloudRain, Wind } from "lucide-react";
+import { Beaker, Thermometer, Droplets, CloudRain, Leaf } from "lucide-react";
 import InputField from "../components/InputField";
 import { motion } from "framer-motion";
 
 const YieldPredictor = () => {
   const [formData, setFormData] = useState({
-    N: 40,
-    P: 60,
-    K: 40,
-    ph: 6.5,
-    temperature: 28,
-    soil_moisture: 70,
-    rainfall: 1000,
+    soil_n: 40,
+    soil_p: 35,
+    soil_k: 30,
+    temperature_c: 26,
+    humidity_percent: 75,
+    rainfall_mm: 900,
+    area_hectare: 5,
   });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -21,13 +21,13 @@ const YieldPredictor = () => {
     setLoading(true);
     try {
       const res = await axios.post("http://localhost:5000/api/yield/predict", {
-        n: Number(formData.N),
-        p: Number(formData.P),
-        k: Number(formData.K),
-        temperature: Number(formData.temperature),
-        soil_moisture: Number(formData.soil_moisture),
-        rainfall: Number(formData.rainfall),
-        ph: Number(formData.ph),
+        rainfall_mm: Number(formData.rainfall_mm),
+        temperature_c: Number(formData.temperature_c),
+        humidity_percent: Number(formData.humidity_percent),
+        soil_n: Number(formData.soil_n),
+        soil_p: Number(formData.soil_p),
+        soil_k: Number(formData.soil_k),
+        area_hectare: Number(formData.area_hectare),
       });
       setResult(res.data);
     } catch (err) {
@@ -54,85 +54,92 @@ const YieldPredictor = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white/5 p-8 rounded-3xl border border-white/10 backdrop-blur-xl">
           {/* NPK Section */}
           <InputField
-            label="Nitrogen (N)"
+            label="Soil Nitrogen (N)"
             icon={Beaker}
-            name="N"
-            value={formData.N}
-            onChange={(e) => setFormData({ ...formData, N: e.target.value })}
-            unit="kg/ha"
+            name="soil_n"
+            value={formData.soil_n}
+            onChange={(e) =>
+              setFormData({ ...formData, soil_n: e.target.value })
+            }
+            unit="ppm"
           />
           <InputField
-            label="Phosphorus (P)"
+            label="Soil Phosphorus (P)"
             icon={Beaker}
-            name="P"
-            value={formData.P}
-            onChange={(e) => setFormData({ ...formData, P: e.target.value })}
-            unit="kg/ha"
+            name="soil_p"
+            value={formData.soil_p}
+            onChange={(e) =>
+              setFormData({ ...formData, soil_p: e.target.value })
+            }
+            unit="ppm"
           />
           <InputField
-            label="Potassium (K)"
+            label="Soil Potassium (K)"
             icon={Beaker}
-            name="K"
-            value={formData.K}
-            onChange={(e) => setFormData({ ...formData, K: e.target.value })}
-            unit="kg/ha"
+            name="soil_k"
+            value={formData.soil_k}
+            onChange={(e) =>
+              setFormData({ ...formData, soil_k: e.target.value })
+            }
+            unit="ppm"
           />
           <InputField
-            label="Soil pH"
-            icon={Droplets}
-            name="ph"
-            value={formData.ph}
-            onChange={(e) => setFormData({ ...formData, ph: e.target.value })}
-            unit="0-14"
+            label="Area (Hectares)"
+            icon={Leaf}
+            name="area_hectare"
+            value={formData.area_hectare}
+            onChange={(e) =>
+              setFormData({ ...formData, area_hectare: e.target.value })
+            }
+            unit="ha"
           />
 
           {/* Environmental Section */}
           <InputField
             label="Temperature"
             icon={Thermometer}
-            name="temperature"
-            value={formData.temperature}
+            name="temperature_c"
+            value={formData.temperature_c}
             onChange={(e) =>
-              setFormData({ ...formData, temperature: e.target.value })
+              setFormData({ ...formData, temperature_c: e.target.value })
             }
             unit="°C"
           />
           <InputField
             label="Rainfall"
             icon={CloudRain}
-            name="rainfall"
-            value={formData.rainfall}
+            name="rainfall_mm"
+            value={formData.rainfall_mm}
             onChange={(e) =>
-              setFormData({ ...formData, rainfall: e.target.value })
+              setFormData({ ...formData, rainfall_mm: e.target.value })
             }
             unit="mm"
           />
 
-          {/* Custom Soil Moisture Slider - Spans 2 columns */}
+          {/* Humidity Slider - Spans 2 columns */}
           <div className="md:col-span-2 bg-white/5 p-6 rounded-2xl border border-white/10 mt-2">
             <div className="flex justify-between mb-4">
               <label className="text-sm font-medium text-slate-400 flex items-center gap-2">
-                <Droplets size={16} className="text-cyan-400" /> Soil Moisture
-                Content
+                <Droplets size={16} className="text-cyan-400" /> Humidity
               </label>
               <span className="text-cyan-400 font-mono font-bold">
-                {formData.soil_moisture}%
+                {formData.humidity_percent}%
               </span>
             </div>
             <input
               type="range"
               min="0"
               max="100"
-              value={formData.soil_moisture}
+              value={formData.humidity_percent}
               onChange={(e) =>
-                setFormData({ ...formData, soil_moisture: e.target.value })
+                setFormData({ ...formData, humidity_percent: e.target.value })
               }
               className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500 hover:accent-cyan-400 transition-all"
             />
             <div className="flex justify-between text-[10px] text-slate-500 mt-2 uppercase tracking-widest font-bold">
-              <span>Dry</span>
-              <span>Ideal (60-80%)</span>
-              <span>Saturated</span>
+              <span>Low</span>
+              <span>Ideal (70-80%)</span>
+              <span>High</span>
             </div>
           </div>
 
@@ -165,13 +172,14 @@ const YieldPredictor = () => {
               Predicted Soybean Yield
             </p>
             <h2 className="text-7xl font-black text-white tracking-tighter">
-              {result.predicted_yield}
+              {result.predicted_yield_kg_per_hectare}
               <span className="text-3xl font-light text-emerald-400 ml-2">
-                q/acre
+                kg/ha
               </span>
             </h2>
             <div className="mt-4 inline-block px-4 py-1 bg-emerald-500/20 rounded-full text-emerald-400 text-xs font-bold border border-emerald-500/30">
-              Maharashtra Regional Calibration Active
+              🎯 Model Accuracy: {result.model_accuracy} | Maharashtra
+              Calibrated
             </div>
           </motion.div>
         )}
