@@ -1,49 +1,29 @@
-import { spawn } from 'child_process';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import axios from "axios";
+import FormData from "form-data";
+import fs from "fs";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+export const predictDisease = async (req, res) => {
+  try {
+    const filePath = req.file.path;
 
-export const detectDisease = async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ error: "No image uploaded" });
-        }
+    const formData = new FormData();
+    formData.append("file", fs.createReadStream(filePath));
 
-        const imageBase64 = req.file.buffer.toString('base64');
-        const scriptPath = path.join(__dirname, '../../ml-service/services/disease_service.py');
-        const python = spawn('python', [scriptPath]);
+    const response = await axios.post(
+      "http://127.0.0.1:8000/predict/disease",
+      formData,
+      {
+        headers: formData.getHeaders(),
+      }
+    );
 
-        python.stdin.write(JSON.stringify({ image: imageBase64 }));
-        python.stdin.end();
+    // delete file after sending
+    fs.unlinkSync(filePath);
 
-        let dataString = '';
-        let errorString = '';
+    res.json(response.data);
 
-        python.stdout.on('data', (data) => {
-            dataString += data.toString();
-        });
-
-        python.stderr.on('data', (data) => {
-            errorString += data.toString();
-        });
-
-        python.on('close', (code) => {
-            if (code !== 0) {
-                console.error("Python Error:", errorString);
-                return res.status(500).json({ error: "Machine Learning service failed" });
-            }
-
-            try {
-                const result = JSON.parse(dataString);
-                res.status(200).json(result);
-            } catch (e) {
-                res.status(500).json({ error: "Invalid response from ML service" });
-            }
-        });
-
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Prediction failed" });
+  }
 };
