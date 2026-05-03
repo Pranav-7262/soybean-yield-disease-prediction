@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import yieldRoutes from "./routes/yieldRoutes.js";
-import diseaseRoute from "./routes/diseaseRoute.js"
+import diseaseRoute from "./routes/diseaseRoute.js";
 
 const app = express();
 

@@ -172,7 +172,7 @@ const YieldPredictor = () => {
               Predicted Soybean Yield
             </p>
             <h2 className="text-7xl font-black text-white tracking-tighter">
-              {result.predicted_yield_kg_per_hectare}
+              {result.predicted_yield}
               <span className="text-3xl font-light text-emerald-400 ml-2">
                 kg/ha
               </span>

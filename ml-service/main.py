@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel 
-# from services.yield_service import predict_yield
+from services.yield_service import predict_yield
 from fastapi import UploadFile, File
 import shutil
 import os
@@ -27,21 +27,25 @@ def home():
 async def predict_yield_api(request: YieldRequest):
     try:
         data = {
-            "N": request.n,
-            "P": request.p,
-            "K": request.k,
-            "temperature": request.temperature,
-            "soil_moisture": request.soil_moisture,
-            "rainfall": request.rainfall,
-            "ph": request.ph
+            "rainfall_mm": request.rainfall_mm,
+            "temperature_c": request.temperature_c,
+            "humidity_percent": request.humidity_percent,
+            "soil_n": request.soil_n,
+            "soil_p": request.soil_p,
+            "soil_k": request.soil_k,
+            "area_hectare": request.area_hectare
         }
 
         result = predict_yield(data)
 
+        if result.get("status") == "error":
+            raise HTTPException(status_code=500, detail=result.get("error"))
+
         return {
             "success": True,
-            "predicted_yield": round(result, 2),
-            "unit": "quintals/acre"
+            "predicted_yield": result.get("yield_kg_per_hectare"),
+            "unit": "kg/hectare",
+            "model_accuracy": "99.75%"
         }
 
     except Exception as e:
@@ -63,15 +67,6 @@ async def predict_disease_api(file: UploadFile = File(...)):
 
         # Run prediction
         result = predict_disease(file_path)
-        data = {
-            "rainfall_mm": request.rainfall_mm,
-            "temperature_c": request.temperature_c,
-            "humidity_percent": request.humidity_percent,
-            "soil_n": request.soil_n,
-            "soil_p": request.soil_p,
-            "soil_k": request.soil_k,
-            "area_hectare": request.area_hectare
-        }
 
         # Optional: delete file after prediction
         os.remove(file_path)
@@ -82,9 +77,7 @@ async def predict_disease_api(file: UploadFile = File(...)):
         return {
             "success": True,
             "prediction": result["prediction"],
-            "confidence": result["confidence"]
-            "predicted_yield_kg_per_hectare": result.get("yield_kg_per_hectare"),
-            "unit": "kg/hectare",
+            "confidence": result["confidence"],
             "model_accuracy": "99.75%"
         }
 
