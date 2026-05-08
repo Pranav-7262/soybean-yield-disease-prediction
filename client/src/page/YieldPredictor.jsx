@@ -1,48 +1,77 @@
-import React, { useState } from "react";
-import axios from "axios";
-import { Beaker, Thermometer, Droplets, CloudRain, Leaf } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  TrendingUp,
+  Thermometer,
+  Droplets,
+  CloudRain,
+  Beaker,
+  Loader,
+  Leaf,
+  CheckCircle,
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { toast } from "react-toastify";
+import { api } from "../services/api";
 import InputField from "../components/InputField";
-import { motion } from "framer-motion";
 
 const YieldPredictor = () => {
-  const [formData, setFormData] = useState({
-    soil_n: 40,
-    soil_p: 35,
-    soil_k: 30,
-    temperature_c: 26,
-    humidity_percent: 75,
-    rainfall_mm: 900,
-    area_hectare: 5,
-  });
-  const [result, setResult] = useState(null);
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [formData, setFormData] = useState({
+    soil_n: "",
+    soil_p: "",
+    soil_k: "",
+    temperature_c: "",
+    humidity_percent: "",
+    rainfall_mm: "",
+    area_hectare: "",
+  });
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate("/login");
+    }
+  }, [authLoading, isAuthenticated, navigate]);
+
+  if (authLoading || (!authLoading && !isAuthenticated)) {
+    return null;
+  }
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: Number(value) }));
+  };
 
   const handlePredict = async () => {
+    if (Object.values(formData).some((v) => !v || v === "" || Number(v) <= 0)) {
+      toast.error("Please fill all fields with positive values");
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/api/yield/predict", {
-        rainfall_mm: Number(formData.rainfall_mm),
-        temperature_c: Number(formData.temperature_c),
-        humidity_percent: Number(formData.humidity_percent),
-        soil_n: Number(formData.soil_n),
-        soil_p: Number(formData.soil_p),
-        soil_k: Number(formData.soil_k),
-        area_hectare: Number(formData.area_hectare),
-      });
-      setResult(res.data);
-    } catch (err) {
-      alert("Backend is sleeping! Make sure Node and Python are running.");
+      const response = await api.yield.predict(formData);
+      const payload = response.data?.data || response.data;
+
+      if (payload) {
+        setResult(payload);
+        toast.success("Yield prediction completed");
+      } else {
+        throw new Error(response.data?.message || "Prediction failed");
+      }
+    } catch (error) {
+      toast.error(error.message || "Failed to predict yield");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-8 flex flex-col items-center">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-4xl w-full"
-      >
+      <div className="max-w-4xl w-full">
         <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
           Soybean Yield Intelligence
         </h1>
@@ -58,9 +87,7 @@ const YieldPredictor = () => {
             icon={Beaker}
             name="soil_n"
             value={formData.soil_n}
-            onChange={(e) =>
-              setFormData({ ...formData, soil_n: e.target.value })
-            }
+            onChange={handleInputChange}
             unit="ppm"
           />
           <InputField
@@ -68,9 +95,7 @@ const YieldPredictor = () => {
             icon={Beaker}
             name="soil_p"
             value={formData.soil_p}
-            onChange={(e) =>
-              setFormData({ ...formData, soil_p: e.target.value })
-            }
+            onChange={handleInputChange}
             unit="ppm"
           />
           <InputField
@@ -78,9 +103,7 @@ const YieldPredictor = () => {
             icon={Beaker}
             name="soil_k"
             value={formData.soil_k}
-            onChange={(e) =>
-              setFormData({ ...formData, soil_k: e.target.value })
-            }
+            onChange={handleInputChange}
             unit="ppm"
           />
           <InputField
@@ -88,9 +111,7 @@ const YieldPredictor = () => {
             icon={Leaf}
             name="area_hectare"
             value={formData.area_hectare}
-            onChange={(e) =>
-              setFormData({ ...formData, area_hectare: e.target.value })
-            }
+            onChange={handleInputChange}
             unit="ha"
           />
 
@@ -100,9 +121,7 @@ const YieldPredictor = () => {
             icon={Thermometer}
             name="temperature_c"
             value={formData.temperature_c}
-            onChange={(e) =>
-              setFormData({ ...formData, temperature_c: e.target.value })
-            }
+            onChange={handleInputChange}
             unit="°C"
           />
           <InputField
@@ -110,9 +129,7 @@ const YieldPredictor = () => {
             icon={CloudRain}
             name="rainfall_mm"
             value={formData.rainfall_mm}
-            onChange={(e) =>
-              setFormData({ ...formData, rainfall_mm: e.target.value })
-            }
+            onChange={handleInputChange}
             unit="mm"
           />
 
@@ -132,7 +149,10 @@ const YieldPredictor = () => {
               max="100"
               value={formData.humidity_percent}
               onChange={(e) =>
-                setFormData({ ...formData, humidity_percent: e.target.value })
+                setFormData({
+                  ...formData,
+                  humidity_percent: Number(e.target.value),
+                })
               }
               className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500 hover:accent-cyan-400 transition-all"
             />
@@ -160,11 +180,7 @@ const YieldPredictor = () => {
         </div>
 
         {result && (
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="mt-8 p-8 bg-gradient-to-b from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-[2.5rem] text-center backdrop-blur-md"
-          >
+          <div className="mt-8 p-8 bg-gradient-to-b from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-[2.5rem] text-center backdrop-blur-md">
             <p className="text-emerald-400 uppercase tracking-[0.2em] text-xs font-black mb-2">
               AI Analysis Complete
             </p>
@@ -172,18 +188,18 @@ const YieldPredictor = () => {
               Predicted Soybean Yield
             </p>
             <h2 className="text-7xl font-black text-white tracking-tighter">
-              {result.predicted_yield}
+              {result?.predicted_yield}
               <span className="text-3xl font-light text-emerald-400 ml-2">
                 kg/ha
               </span>
             </h2>
             <div className="mt-4 inline-block px-4 py-1 bg-emerald-500/20 rounded-full text-emerald-400 text-xs font-bold border border-emerald-500/30">
-              🎯 Model Accuracy: {result.model_accuracy} | Maharashtra
+              🎯 Model Accuracy: {result?.model_accuracy} | Maharashtra
               Calibrated
             </div>
-          </motion.div>
+          </div>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 };
