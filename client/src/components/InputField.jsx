@@ -11,7 +11,7 @@ const InputField = ({
 }) => (
   <div className="flex flex-col gap-2 w-full">
     <label className="text-sm font-medium text-slate-400 flex items-center gap-2">
-      <Icon size={16} /> {label}
+      {Icon ? <Icon size={16} /> : null} {label}
     </label>
     <div className="relative">
       <input
