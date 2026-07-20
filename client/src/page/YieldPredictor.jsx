@@ -43,7 +43,7 @@ const YieldPredictor = () => {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-4xl w-full"
       >
-        <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+        <h1 className="text-4xl font-bold mb-2 bg-gradient-to-red from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
           Soybean Yield Intelligence
         </h1>
         <p className="text-slate-400 mb-8">
@@ -146,7 +146,7 @@ const YieldPredictor = () => {
           <button
             onClick={handlePredict}
             disabled={loading}
-            className="md:col-span-2 mt-4 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-bold py-4 rounded-2xl transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="md:col-span-2 mt-4 bg-gradient-to-red from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-bold py-4 rounded-2xl transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -163,7 +163,7 @@ const YieldPredictor = () => {
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="mt-8 p-8 bg-gradient-to-b from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-[2.5rem] text-center backdrop-blur-md"
+            className="mt-8 p-8 bg-gradient-to-blue from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-[2.5rem] text-center backdrop-blur-md"
           >
             <p className="text-emerald-400 uppercase tracking-[0.2em] text-xs font-black mb-2">
               AI Analysis Complete
