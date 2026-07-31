@@ -12,16 +12,26 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       try {
         const response = await api.auth.getCurrentUser();
-        // Axios response structure: response.data contains the actual data
-        if (response.data?.data) {
-          setUser(response.data.data);
+        const userData = response?.data?.data;
+
+        if (userData) {
+          setUser(userData);
+        } else {
+          setUser(null);
         }
       } catch (err) {
-        console.error("Auth check failed:", err);
+        const status = err?.response?.status;
+
+        if (status !== 401 && status !== 403) {
+          console.error("Auth check failed:", err);
+        }
+
+        setUser(null);
       } finally {
         setLoading(false);
       }
     };
+
     checkAuth();
   }, []);
 
@@ -30,10 +40,12 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       const response = await api.auth.register({ userName, email, password });
       const userData = response.data?.data;
+
       if (userData) {
-        setUser(userData);
+        setUser(null);
         return { success: true, data: userData };
       }
+
       throw new Error(response.data?.message || "Registration failed");
     } catch (err) {
       const errorInfo = handleApiError(err);
