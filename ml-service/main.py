@@ -8,7 +8,14 @@ from services.disease_service import predict_disease
 
 app = FastAPI(title="Soybean Agri-AI ML Service")
 
-ALLOWED_TYPES = ["image/jpeg", "image/png"]
+ALLOWED_TYPES = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/pjpeg",
+    "image/x-png",
+    "application/octet-stream",
+]
 
 class YieldRequest(BaseModel):
     rainfall_mm: float
@@ -54,11 +61,11 @@ async def predict_yield_api(request: YieldRequest):
 @app.post("/predict/disease")
 async def predict_disease_api(file: UploadFile = File(...)):
     try:
-        # Check file type
-        if file.content_type not in ALLOWED_TYPES:
+        # Check file type (be tolerant of common variants; allow missing content_type)
+        if file.content_type and file.content_type not in ALLOWED_TYPES:
             raise HTTPException(
                 status_code=400,
-                detail="Only .jpg and .png images are allowed"
+                detail=f"Unsupported file type: {file.content_type}. Only JPEG/PNG images are allowed"
             )
 
         # Save uploaded image temporarily
@@ -98,33 +105,5 @@ async def predict_disease_api(file: UploadFile = File(...)):
         raise HTTPException(
             status_code=500,
             detail=str(e)
-        )    try:
-        if file.content_type not in ALLOWED_TYPES:
-            raise HTTPException(status_code=400, detail="Only .jpg and .png images are allowed")
-        # Save uploaded file temporarily
-        upload_dir = "uploads"
-        os.makedirs(upload_dir, exist_ok=True)
+        )
 
-        file_path = os.path.join(upload_dir, file.filename)
-
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-
-        # Run prediction
-        result = predict_disease(file_path)
-
-        # Optional: delete file after prediction
-        os.remove(file_path) # 
-
-        if result.get("status") == "error":
-            raise HTTPException(status_code=400, detail=result.get("error"))
-
-        return {
-            "success": True,
-            "prediction": result["prediction"],
-            "confidence": result["confidence"],
-            "model_accuracy": "99.75%"
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
