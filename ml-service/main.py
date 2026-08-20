@@ -54,6 +54,51 @@ async def predict_yield_api(request: YieldRequest):
 @app.post("/predict/disease")
 async def predict_disease_api(file: UploadFile = File(...)):
     try:
+        # Check file type
+        if file.content_type not in ALLOWED_TYPES:
+            raise HTTPException(
+                status_code=400,
+                detail="Only .jpg and .png images are allowed"
+            )
+
+        # Save uploaded image temporarily
+        upload_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "models",
+            "uploads"
+        )
+
+        os.makedirs(upload_dir, exist_ok=True)
+
+        file_path = os.path.join(upload_dir, file.filename)
+
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        try:
+            # Run disease prediction
+            result = predict_disease(file_path)
+
+        finally:
+            # Delete uploaded image after prediction
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
+        return {
+            "success": True,
+            "prediction": result["disease"],
+            "confidence": result["confidence"],
+            "model_accuracy": "99.75%"
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )    try:
         if file.content_type not in ALLOWED_TYPES:
             raise HTTPException(status_code=400, detail="Only .jpg and .png images are allowed")
         # Save uploaded file temporarily
@@ -69,7 +114,7 @@ async def predict_disease_api(file: UploadFile = File(...)):
         result = predict_disease(file_path)
 
         # Optional: delete file after prediction
-        os.remove(file_path)
+        os.remove(file_path) # 
 
         if result.get("status") == "error":
             raise HTTPException(status_code=400, detail=result.get("error"))

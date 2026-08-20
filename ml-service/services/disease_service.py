@@ -1,32 +1,84 @@
-import tensorflow as tf
-import numpy as np
-from tensorflow.keras.preprocessing import image
 import os
+import numpy as np
+import tensorflow as tf
+from PIL import Image
 
-MODEL_PATH = os.path.join("models", "disease", "disease_model.h5")
 
-# Load model once (important for performance)
+# MODEL CONFIGURATION
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+MODEL_PATH = os.path.join(
+    BASE_DIR,
+    "models",
+    "disease",
+    "soybean_disease_efficientnetb0_final.keras"
+)
+
+IMAGE_SIZE = (224, 224)
+
+
+# DISEASE CLASSES
+
+CLASS_NAMES = [
+    "Bacterial_Leaf_Blight",
+    "Dry_Leaf",
+    "Healthy",
+    "Septoria_Brown_Spot",
+    "Southern_Blight",
+    "Vein_Necrosis",
+    "Yellow_Mosaic"
+]
+
+
+# LOAD MODEL
+print("Loading soybean disease model...")
+
 model = tf.keras.models.load_model(MODEL_PATH)
 
-class_names = ["Disease", "Healthy"]
+print("Soybean disease model loaded successfully.")
 
-def predict_disease(img_path):
-    img = image.load_img(img_path, target_size=(224, 224))
-    img_array = image.img_to_array(img)
-    img_array = np.expand_dims(img_array, axis=0)
 
-    predictions = model.predict(img_array)
-    score = tf.nn.softmax(predictions[0])
+# IMAGE PREPROCESSING
 
-    # your tuned threshold
-    if score[1] > 0.65:
-        label = "Healthy"
-    else:
-        label = "Disease"
+def preprocess_image(image_path):
+    """
+    Load and preprocess a soybean leaf image.
+    """
 
-    confidence = float(100 * np.max(score))
+    image = Image.open(image_path).convert("RGB")
+
+    image = image.resize(IMAGE_SIZE)
+
+    image_array = np.array(image)
+
+    image_array = image_array.astype(np.float32) / 255.0
+
+    image_array = np.expand_dims(image_array, axis=0)
+
+    return image_array
+
+
+#  DISEASE PREDICTION
+
+def predict_disease(image_path):
+    """
+    Predict soybean disease from an image.
+    """
+
+    image = preprocess_image(image_path)
+
+    predictions = model.predict(image, verbose=0)
+
+    probabilities = predictions[0]
+
+    predicted_index = int(np.argmax(probabilities))
+
+    predicted_class = CLASS_NAMES[predicted_index]
+
+    confidence = float(probabilities[predicted_index])
 
     return {
-        "prediction": label,
-        "confidence": round(confidence, 2)
+        "disease": predicted_class,
+        "confidence": round(confidence * 100, 2)
     }
