@@ -8,13 +8,11 @@ import {
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Providers
+
 import { AuthProvider } from "./context/AuthContext";
 
-// Components & Layout
 import MainLayout from "./components/MainLayout";
 
-// Pages
 import Dashboard from "./page/Dashboard";
 import YieldPredictor from "./page/YieldPredictor";
 import DiseaseDetector from "./page/DiseaseDetector";

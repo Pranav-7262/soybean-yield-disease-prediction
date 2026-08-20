@@ -29,7 +29,13 @@ const StatCard = ({ icon: Icon, label, value, subtext, delay }) => {
           </div>
         </div>
         <p className="text-slate-400 text-sm mb-1">{label}</p>
-        <p className="text-3xl font-bold text-emerald-400 mb-1">{value}</p>
+        <p className="text-3xl font-bold text-emerald-400 mb-1">
+          {typeof value === "number"
+            ? Math.max(0, value).toLocaleString(undefined, {
+                maximumFractionDigits: 2,
+              })
+            : value || "0"}
+        </p>
         {subtext && <p className="text-xs text-slate-500">{subtext}</p>}
       </div>
     </motion.div>
@@ -113,7 +119,7 @@ const Dashboard = () => {
             Welcome back!
           </p>
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
-            Hello , {user?.user.userName}
+            Hello, {user?.user.userName}
           </h1>
           <p className="text-slate-400">
             Monitor your crops and get AI-powered insights
@@ -130,29 +136,29 @@ const Dashboard = () => {
             <StatCard
               icon={BarChart3}
               label="Total Predictions"
-              value={stats?.totalPredictions || 0}
+              value={Math.max(0, stats?.totalPredictions || 0)}
               subtext="All time"
               delay={0.1}
             />
             <StatCard
               icon={ShieldAlert}
-              label="Average Yield"
-              value={stats?.avgYield || 0}
-              subtext="Issues found"
+              label="Average Yield (kg/ha)"
+              value={Math.max(0, stats?.avgYield || 0)}
+              subtext="Rolling average"
               delay={0.2}
             />
             <StatCard
               icon={TrendingUp}
-              label="Max Yield"
-              value={stats?.maxYield || 0}
-              subtext="Completed"
+              label="Max Yield (kg/ha)"
+              value={Math.max(0, stats?.maxYield || 0)}
+              subtext="Observed max"
               delay={0.3}
             />
             <StatCard
               icon={TrendingUp}
-              label="Min Yield"
-              value={stats?.minYield || 0}
-              subtext="Completed"
+              label="Min Yield (kg/ha)"
+              value={Math.max(0, stats?.minYield || 0)}
+              subtext="Observed min"
               delay={0.3}
             />
           </div>
@@ -239,6 +245,51 @@ const Dashboard = () => {
                 </div>
               </motion.div>
             ))}
+          </div>
+        </motion.div>
+
+        {/* Insights / Recommendations */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="mt-8 bg-slate-800/30 backdrop-blur border border-white/6 rounded-2xl p-6"
+        >
+          <h2 className="text-xl font-bold text-white mb-4">Latest Insights</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 bg-slate-900/40 rounded-lg">
+              <p className="text-xs text-slate-400 uppercase mb-2">
+                Top Region
+              </p>
+              <p className="font-semibold text-white">Maharashtra</p>
+              <p className="text-sm text-slate-400 mt-2">
+                Most predictions and calibration data originate here.
+              </p>
+            </div>
+
+            <div className="p-4 bg-slate-900/40 rounded-lg">
+              <p className="text-xs text-slate-400 uppercase mb-2">
+                Model Accuracy
+              </p>
+              <p className="font-semibold text-emerald-400">
+                {stats?.modelAccuracy
+                  ? `${Math.max(0, stats.modelAccuracy)}%`
+                  : "—"}
+              </p>
+              <p className="text-sm text-slate-400 mt-2">
+                Average performance across recent predictions.
+              </p>
+            </div>
+
+            <div className="p-4 bg-slate-900/40 rounded-lg">
+              <p className="text-xs text-slate-400 uppercase mb-2">
+                Recommended Action
+              </p>
+              <p className="font-semibold text-white">Balance NPK</p>
+              <p className="text-sm text-slate-400 mt-2">
+                Adjust fertilization according to soil test recommendations.
+              </p>
+            </div>
           </div>
         </motion.div>
       </div>

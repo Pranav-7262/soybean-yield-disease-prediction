@@ -58,10 +58,9 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="sticky top-0 z-40 w-full">
+      <nav className="fixed top-0 left-0 w-full z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="h-20 flex items-center justify-between mt-4 mb-4 bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-4 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-            {/* Logo */}
+          <div className="h-20 flex items-center justify-between mt-2 bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-4 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
             <Link
               to="/"
               className="flex items-center gap-2 group flex-shrink-0"
@@ -191,7 +190,7 @@ const Navbar = () => {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed top-32 left-4 right-4 z-30 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl p-4 space-y-2 animate-in fade-in zoom-in-95 duration-200">
+        <div className="lg:hidden mt-4 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl p-4 space-y-2 animate-in fade-in zoom-in-95 duration-200">
           <NavLink
             to="/dashboard"
             icon={<BarChart3 size={18} />}

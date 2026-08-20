@@ -19,8 +19,10 @@ const InputField = ({
         name={name}
         value={value}
         onChange={onChange}
+        min={0}
+        step="any"
         placeholder={placeholder}
-        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all placeholder:text-slate-600"
+        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all placeholder:text-slate-600"
       />
       {unit && (
         <span className="absolute right-4 top-3.5 text-xs text-slate-500">

@@ -17,7 +17,7 @@ const YieldPredictor = () => {
     soil_p: "",
     soil_k: "",
     temperature_c: "",
-    humidity_percent: "",
+    humidity_percent: 50,
     rainfall_mm: "",
     area_hectare: "",
   });
@@ -34,12 +34,63 @@ const YieldPredictor = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: Number(value) }));
+    // allow clearing the field (empty string) but clamp negatives to 0
+    if (value === "") {
+      setFormData((prev) => ({ ...prev, [name]: "" }));
+      return;
+    }
+    const num = Number(value);
+    setFormData((prev) => ({
+      ...prev,
+      [name]: Number.isNaN(num) ? "" : Math.max(0, num),
+    }));
+  };
+
+  const fillSampleData = () => {
+    setFormData({
+      soil_n: 20,
+      soil_p: 15,
+      soil_k: 30,
+      temperature_c: 28,
+      humidity_percent: 70,
+      rainfall_mm: 200,
+      area_hectare: 1.5,
+    });
+  };
+
+  const clearForm = () => {
+    setFormData({
+      soil_n: "",
+      soil_p: "",
+      soil_k: "",
+      temperature_c: "",
+      humidity_percent: 50,
+      rainfall_mm: "",
+      area_hectare: "",
+    });
+    setResult(null);
   };
 
   const handlePredict = async () => {
-    if (Object.values(formData).some((v) => !v || v === "" || Number(v) <= 0)) {
-      toast.error("Please fill all fields with positive values");
+    // Basic validations: no empty fields, no negative values. Area must be > 0.
+    const hasEmpty = Object.entries(formData).some(
+      ([, v]) => v === "" || v === null || v === undefined,
+    );
+    if (hasEmpty) {
+      toast.error(
+        "Please fill all fields (zeros are allowed where appropriate)",
+      );
+      return;
+    }
+    const hasNegative = Object.entries(formData).some(
+      ([, v]) => typeof v === "number" && v < 0,
+    );
+    if (hasNegative) {
+      toast.error("Values cannot be negative");
+      return;
+    }
+    if (Number(formData.area_hectare) <= 0) {
+      toast.error("Area must be greater than 0");
       return;
     }
 
@@ -62,21 +113,52 @@ const YieldPredictor = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-8 flex flex-col items-center">
+    <div className="min-h-screen mt-10 py-5 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 pt-10 pb-15">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-4xl w-full"
+        className="container mx-auto max-w-4xl w-full px-6 relative z-10"
       >
         <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
           Soybean Yield Intelligence
         </h1>
-        <p className="text-slate-400 mb-8">
+        <p className="text-slate-400 mb-4">
           Enter soil and environmental parameters for Maharashtra-calibrated
           results.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white/5 p-8 rounded-3xl border border-white/10 backdrop-blur-xl">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+          <div className="bg-slate-800/40 p-4 rounded-xl border border-white/5 text-sm text-slate-300">
+            <p className="font-semibold text-white mb-1">About this page</p>
+            <p className="text-slate-400 text-sm">
+              Use this tool to estimate soybean yield (kg/ha) based on soil NPK,
+              weather and field area. Results are calibrated for Maharashtra.
+            </p>
+            <ul className="mt-2 text-xs text-slate-400 list-disc list-inside">
+              <li>Typical N (ppm): 5 - 50</li>
+              <li>Typical P (ppm): 5 - 40</li>
+              <li>Typical K (ppm): 50 - 400</li>
+              <li>Temperature: 10°C - 40°C</li>
+            </ul>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={fillSampleData}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition"
+            >
+              Use Sample Data
+            </button>
+            <button
+              onClick={clearForm}
+              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-800/40 p-8 rounded-3xl border border-emerald-500/20 backdrop-blur-xl">
           {/* NPK Section */}
           <InputField
             label="Soil Nitrogen (N)"
@@ -179,7 +261,7 @@ const YieldPredictor = () => {
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="mt-8 p-8 bg-gradient-to-r from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-[2.5rem] text-center backdrop-blur-md"
+            className="mt-8 p-8 bg-gradient-to-r from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-[2.5rem] text-center backdrop-blur-md max-w-3xl mx-auto"
           >
             <p className="text-emerald-400 uppercase tracking-[0.2em] text-xs font-black mb-2">
               AI Analysis Complete
@@ -188,13 +270,18 @@ const YieldPredictor = () => {
               Predicted Soybean Yield
             </p>
             <h2 className="text-7xl font-black text-white tracking-tighter">
-              {result?.predicted_yield}
+              {Number(result?.predicted_yield) >= 0
+                ? Number(result?.predicted_yield).toLocaleString(undefined, {
+                    maximumFractionDigits: 2,
+                  })
+                : 0}
               <span className="text-3xl font-light text-emerald-400 ml-2">
                 kg/ha
               </span>
             </h2>
             <div className="mt-4 inline-block px-4 py-1 bg-emerald-500/20 rounded-full text-emerald-400 text-xs font-bold border border-emerald-500/30">
-              🎯 Model Accuracy: {result?.model_accuracy} | Maharashtra
+              🎯 Model Accuracy:{" "}
+              {Math.max(0, Number(result?.model_accuracy || 0))}% | Maharashtra
               Calibrated
             </div>
           </motion.div>
