@@ -14,14 +14,13 @@ export const predictDisease = async (req, res) => {
       formData,
       {
         headers: formData.getHeaders(),
-      }
+      },
     );
 
     // delete file after sending
     fs.unlinkSync(filePath);
-
+    console.log("data : ", response.data);
     res.json(response.data);
-
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ error: "Prediction failed" });

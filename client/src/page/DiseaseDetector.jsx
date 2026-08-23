@@ -76,6 +76,7 @@ const DiseaseDetector = () => {
 
       const response = await api.disease.predict(formData);
       if (response.data) {
+        console.log("Prediction response:", response.data);
         setPrediction(response.data);
         toast.success("Disease detection completed");
       } else {
@@ -128,9 +129,17 @@ const DiseaseDetector = () => {
         severity: "High",
         description: "Leaf spot disease detected. Isolate affected plants.",
       },
+      yellow_mosaic: {
+        icon: ShieldAlert,
+        color: "text-red-400",
+        bgColor: "bg-red-500/10",
+        severity: "High",
+        description:
+          "Leaves show bright yellow patches, green-yellow mottling, or small yellow spots near the veins.",
+      },
     };
 
-    return diseases[diseaseName?.toLowerCase()] || diseases.healthy;
+    return diseases[diseaseName?.toLowerCase()];
   };
 
   const containerVariants = {
@@ -273,7 +282,7 @@ const DiseaseDetector = () => {
                 {/* Result Card */}
                 <div className="bg-slate-800/40 backdrop-blur border border-emerald-500/20 rounded-2xl p-8">
                   {(() => {
-                    const info = getDiseaseInfo(prediction.disease);
+                    const info = getDiseaseInfo(prediction.prediction);
                     const Icon = info.icon;
                     return (
                       <div
@@ -284,7 +293,7 @@ const DiseaseDetector = () => {
                           className={`${info.color} mx-auto mb-4`}
                         />
                         <h2 className={`text-3xl font-bold ${info.color} mb-2`}>
-                          {prediction.disease || "Unknown"}
+                          {prediction.prediction}
                         </h2>
                         <p
                           className={`text-lg font-semibold ${info.color} mb-4`}
