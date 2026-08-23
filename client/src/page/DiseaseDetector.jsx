@@ -75,12 +75,12 @@ const DiseaseDetector = () => {
       formData.append("image", selectedFile);
 
       const response = await api.disease.predict(formData);
-      if (response.data) {
-        console.log("Prediction response:", response.data);
-        setPrediction(response.data);
+      const payload = response.data?.data || response.data;
+      if (payload?.prediction) {
+        setPrediction(payload);
         toast.success("Disease detection completed");
       } else {
-        throw new Error(response.message || "Prediction failed");
+        throw new Error(response.data?.message || "Prediction failed");
       }
     } catch (error) {
       toast.error(error.message || "Failed to detect disease");
@@ -139,7 +139,16 @@ const DiseaseDetector = () => {
       },
     };
 
-    return diseases[diseaseName?.toLowerCase()];
+    return (
+      diseases[diseaseName?.toLowerCase()] || {
+        icon: AlertTriangle,
+        color: "text-yellow-400",
+        bgColor: "bg-yellow-500/10",
+        severity: "Needs review",
+        description:
+          "The model returned an unfamiliar result. Review the image and consider consulting an agronomist.",
+      }
+    );
   };
 
   const containerVariants = {

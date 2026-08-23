@@ -1,6 +1,6 @@
 import async_handler from "express-async-handler";
 import { predictYield } from "../services/mlClient.js";
-import Prediction from "../models/Prediction.js";
+import Prediction from "../models/yieldPrediction.js";
 import { ApiError } from "../config/ApiError.js";
 import { ApiResponse } from "../config/ApiResponse.js";
 

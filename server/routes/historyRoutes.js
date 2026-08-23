@@ -28,4 +28,6 @@ router.delete("/:predictionId", deletePrediction);
 // Delete all predictions
 router.delete("/", deleteAllPredictions);
 
+
+
 export default router;

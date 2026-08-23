@@ -1,7 +1,8 @@
 import async_handler from "express-async-handler";
-import Prediction from "../models/Prediction.js";
+import Prediction from "../models/yieldPrediction.js";
 import { ApiError } from "../config/ApiError.js";
 import { ApiResponse } from "../config/ApiResponse.js";
+import DiseasePrediction from "../models/diseasePrediction.js";
 
 export const getUserHistory = async_handler(async (req, res) => {
   const userId = req.userId;
@@ -130,4 +131,80 @@ export const getPredictionStats = async_handler(async (req, res) => {
       "Statistics fetched successfully",
     ),
   );
+});
+
+export const getDiseaseHistory = async_handler(async (req, res) => {
+  const userId = req.userId;
+
+  const predictions = await DiseasePrediction.find({ userId })
+    .sort({ createdAt: -1 })
+    .exec();
+
+  if (!predictions) {
+    throw new ApiError(404, "No predictions found");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        predictions,
+        "User predictions fetched successfully",
+      ),
+    );
+});
+
+export const getDiseasePredictionById = async_handler(async (req, res) => {
+  const { predictionId } = req.params;
+  const userId = req.userId;
+
+  const prediction = await DiseasePrediction.findById(predictionId);
+
+  if (!prediction) {
+    throw new ApiError(404, "Prediction not found");
+  }
+
+  if (prediction.userId.toString() !== userId.toString()) {
+    throw new ApiError(403, "You are not authorized to view this prediction");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, prediction, "Prediction fetched successfully"));
+});
+
+export const deleteDiseasePrediction = async_handler(async (req, res) => {
+  const { predictionId } = req.params;
+  const userId = req.userId;
+
+  const prediction = await DiseasePrediction.findById(predictionId);
+
+  if (!prediction) {
+    throw new ApiError(404, "Prediction not found");
+  }
+
+  if (prediction.userId.toString() !== userId.toString()) {
+    throw new ApiError(403, "You are not authorized to delete this prediction");
+  }
+
+  await DiseasePrediction.findByIdAndDelete(predictionId);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Prediction deleted successfully"));
+});
+
+export const deleteAllDiseasePredictions = async_handler(async (req, res) => {
+  const userId = req.userId;
+
+  const result = await DiseasePrediction.deleteMany({ userId });
+
+  if (result.deletedCount === 0) {
+    throw new ApiError(404, "No predictions found to delete");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, null, "All predictions deleted successfully"));
 });

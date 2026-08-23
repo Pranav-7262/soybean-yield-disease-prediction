@@ -48,6 +48,22 @@ export const api = {
         },
       });
     },
+
+    getHistory: async () => {
+      return axiosInstance.get("/disease");
+    },
+
+    getHistoryById: async (id) => {
+      return axiosInstance.get(`/disease/${id}`);
+    },
+
+    deleteHistory: async (id) => {
+      return axiosInstance.delete(`/disease/${id}`);
+    },
+
+    deleteAllHistory: async () => {
+      return axiosInstance.delete("/disease");
+    },
   },
 
   yield: {
