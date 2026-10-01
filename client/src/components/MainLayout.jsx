@@ -1,17 +1,13 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
-import Navbar from "./Navbar";
 import Footer from "./Footer";
 
 const MainLayout = () => {
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Navbar - Fixed at top */}
-      <Navbar />
-
+    <div className="flex min-h-[calc(100vh-6rem)] flex-col">
       {/* Main Content - Grows to fill space */}
-      <main className="flex-1 pt-5 pb-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 pt-4 pb-12">
+        <div className="max-w-screen-2xl mx-auto px-5 sm:px-8 lg:px-12 2xl:px-16">
           <Outlet />
         </div>
       </main>

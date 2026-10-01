@@ -69,14 +69,14 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 pt-32 pb-20">
+    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 pb-20">
       {/* Background Effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 right-0 w-96 h-96 bg-emerald-600/5 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="container mx-auto px-6 relative z-10 max-w-2xl">
+      <div className="page-frame relative z-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}

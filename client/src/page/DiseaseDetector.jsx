@@ -129,6 +129,38 @@ const DiseaseDetector = () => {
         severity: "High",
         description: "Leaf spot disease detected. Isolate affected plants.",
       },
+      dry_leaf: {
+        icon: AlertTriangle,
+        color: "text-yellow-400",
+        bgColor: "bg-yellow-500/10",
+        severity: "Moderate",
+        description:
+          "The leaf appears dry or stressed. Check irrigation, heat exposure, and soil moisture.",
+      },
+      septoria_brown_spot: {
+        icon: ShieldAlert,
+        color: "text-red-400",
+        bgColor: "bg-red-500/10",
+        severity: "High",
+        description:
+          "Septoria brown spot detected. Remove affected leaves and improve field airflow.",
+      },
+      southern_blight: {
+        icon: ShieldAlert,
+        color: "text-red-400",
+        bgColor: "bg-red-500/10",
+        severity: "High",
+        description:
+          "Southern blight detected. Remove affected plants and avoid excess soil moisture.",
+      },
+      vein_necrosis: {
+        icon: ShieldAlert,
+        color: "text-red-400",
+        bgColor: "bg-red-500/10",
+        severity: "High",
+        description:
+          "Vein necrosis detected. Isolate affected plants and monitor nearby leaves closely.",
+      },
       yellow_mosaic: {
         icon: ShieldAlert,
         color: "text-red-400",
@@ -137,16 +169,23 @@ const DiseaseDetector = () => {
         description:
           "Leaves show bright yellow patches, green-yellow mottling, or small yellow spots near the veins.",
       },
+      bacterial_leaf_blight: {
+        icon: ShieldAlert,
+        color: "text-red-400",
+        bgColor: "bg-red-500/10",
+        severity: "High",
+        description: "Leaf spot disease detected. Isolate affected plants.",
+      },
     };
 
     return (
       diseases[diseaseName?.toLowerCase()] || {
-        icon: AlertTriangle,
-        color: "text-yellow-400",
-        bgColor: "bg-yellow-500/10",
+        icon: ShieldAlert,
+        color: "text-orange-400",
+        bgColor: "bg-orange-500/10",
         severity: "Needs review",
         description:
-          "The model returned an unfamiliar result. Review the image and consider consulting an agronomist.",
+          "The model returned an unfamiliar result. Review the image and monitor the crop closely.",
       }
     );
   };
@@ -165,14 +204,14 @@ const DiseaseDetector = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 pt-32 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 pb-20">
       {/* Background Effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 right-0 w-96 h-96 bg-red-600/5 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-orange-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="container mx-auto px-6 relative z-10 max-w-4xl">
+      <div className="page-frame relative z-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}

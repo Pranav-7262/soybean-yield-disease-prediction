@@ -232,7 +232,6 @@ const PredictionHistory = () => {
     <section>
       <div className="mb-5 flex items-center justify-between gap-4">
         <div>
-         
           <h2 className="mt-1 flex items-center gap-2 text-2xl font-bold text-white">
             <Icon size={22} /> {title}
           </h2>
@@ -266,8 +265,8 @@ const PredictionHistory = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4 pb-20 pt-28 text-slate-100 sm:px-6">
-      <div className="mx-auto max-w-6xl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 pb-20 text-slate-100">
+      <div className="page-frame">
         <header className="mb-10 flex flex-col gap-6 border-b border-slate-800 pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="mb-3 flex items-center gap-3">

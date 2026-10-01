@@ -1,16 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import {
-  BarChart3,
-  ShieldAlert,
-  TrendingUp,
-  Clock,
-  Loader,
-} from "lucide-react";
+import { BarChart3, ShieldAlert, TrendingUp, Leaf, Loader } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
 import { toast } from "react-toastify";
+
+const recordsFrom = (response) => response.data?.data || response.data || [];
+
+const dateLabel = (date) =>
+  date
+    ? new Date(date).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "Unknown date";
 
 const StatCard = ({ icon: Icon, label, value, subtext, delay }) => {
   return (
@@ -77,6 +82,7 @@ const QuickActionCard = ({
 const Dashboard = () => {
   const { user, isAuthenticated } = useAuth();
   const [stats, setStats] = useState(null);
+  const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -88,10 +94,34 @@ const Dashboard = () => {
 
     const fetchStats = async () => {
       try {
-        const response = await api.history.getStats();
-        setStats(response.data.data || {});
-      } catch (error) {
-        console.error("Failed to fetch stats:", error);
+        const [statsResponse, yieldResponse, diseaseResponse] =
+          await Promise.all([
+            api.history.getStats(),
+            api.history.getAll(),
+            api.disease.getHistory(),
+          ]);
+        const yieldRecords = recordsFrom(yieldResponse);
+        const diseaseRecords = recordsFrom(diseaseResponse);
+        const activity = [
+          ...yieldRecords.map((item) => ({ ...item, type: "yield" })),
+          ...diseaseRecords.map((item) => ({ ...item, type: "disease" })),
+        ]
+          .sort(
+            (left, right) =>
+              new Date(right.createdAt) - new Date(left.createdAt),
+          )
+          .slice(0, 4);
+
+        setStats({
+          ...(statsResponse.data?.data || {}),
+          diseasePredictions: diseaseRecords.length,
+          totalPredictions:
+            (statsResponse.data?.data?.totalPredictions ||
+              yieldRecords.length) + diseaseRecords.length,
+        });
+        setRecentActivity(activity);
+      } catch {
+        toast.error("Failed to load dashboard insights");
       } finally {
         setLoading(false);
       }
@@ -99,16 +129,15 @@ const Dashboard = () => {
 
     fetchStats();
   }, [isAuthenticated, navigate]);
-  console.log("user :", user);
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 pt-10 pb-15">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 pb-15">
       {/* Background Effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 right-0 w-96 h-96 bg-emerald-600/5 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="container mx-auto px-6 relative z-10">
+      <div className="page-frame relative z-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -135,31 +164,31 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             <StatCard
               icon={BarChart3}
-              label="Total Predictions"
+              label="Total Analyses"
               value={Math.max(0, stats?.totalPredictions || 0)}
-              subtext="All time"
+              subtext="Disease and yield"
               delay={0.1}
             />
             <StatCard
               icon={ShieldAlert}
+              label="Disease Checks"
+              value={Math.max(0, stats?.diseasePredictions || 0)}
+              subtext="All time"
+              delay={0.2}
+            />
+            <StatCard
+              icon={Leaf}
               label="Average Yield (kg/ha)"
               value={Math.max(0, stats?.avgYield || 0)}
               subtext="Rolling average"
-              delay={0.2}
+              delay={0.3}
             />
             <StatCard
               icon={TrendingUp}
               label="Max Yield (kg/ha)"
               value={Math.max(0, stats?.maxYield || 0)}
               subtext="Observed max"
-              delay={0.3}
-            />
-            <StatCard
-              icon={TrendingUp}
-              label="Min Yield (kg/ha)"
-              value={Math.max(0, stats?.minYield || 0)}
-              subtext="Observed min"
-              delay={0.3}
+              delay={0.4}
             />
           </div>
         )}
@@ -199,6 +228,70 @@ const Dashboard = () => {
             />
           </div>
         </motion.div>
+
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.55 }}
+          className="mb-12 rounded-2xl border border-slate-700/70 bg-slate-800/40 p-6 backdrop-blur"
+        >
+          <div className="mb-5 flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-white">Recent activity</h2>
+              <p className="mt-1 text-sm text-slate-400">
+                Your latest crop health and yield analyses
+              </p>
+            </div>
+            <button
+              onClick={() => navigate("/history")}
+              className="text-sm font-semibold text-emerald-400 transition hover:text-emerald-300"
+            >
+              View all
+            </button>
+          </div>
+          {recentActivity.length ? (
+            <div className="divide-y divide-slate-700/60">
+              {recentActivity.map((item) => {
+                const disease = item.type === "disease";
+                return (
+                  <div
+                    key={`${item.type}-${item._id}`}
+                    className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div
+                        className={`rounded-xl p-2.5 ${disease ? "bg-orange-500/15" : "bg-emerald-500/15"}`}
+                      >
+                        {disease ? (
+                          <ShieldAlert className="text-orange-400" size={19} />
+                        ) : (
+                          <BarChart3 className="text-emerald-400" size={19} />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-white">
+                          {disease
+                            ? item.prediction
+                            : `${item.predicted_yield} ${item.unit || "kg/hectare"}`}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {disease ? "Disease detection" : "Yield prediction"}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="shrink-0 text-xs text-slate-400">
+                      {dateLabel(item.createdAt)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="py-6 text-center text-sm text-slate-400">
+              No analyses recorded yet.
+            </p>
+          )}
+        </motion.section>
 
         {/* Features Overview */}
         <motion.div

@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Thermometer, Droplets, CloudRain, Beaker, Leaf } from "lucide-react";
+import {
+  Thermometer,
+  Droplets,
+  CloudRain,
+  Beaker,
+  Leaf,
+  RotateCcw,
+  TrendingUp,
+  MapPin,
+  LoaderCircle,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import { api } from "../services/api";
@@ -17,7 +27,7 @@ const YieldPredictor = () => {
     soil_p: "",
     soil_k: "",
     temperature_c: "",
-    humidity_percent: 50,
+    humidity_percent: "",
     rainfall_mm: "",
     area_hectare: "",
   });
@@ -46,32 +56,21 @@ const YieldPredictor = () => {
     }));
   };
 
-  const fillSampleData = () => {
-    setFormData({
-      soil_n: 20,
-      soil_p: 15,
-      soil_k: 30,
-      temperature_c: 28,
-      humidity_percent: 70,
-      rainfall_mm: 200,
-      area_hectare: 1.5,
-    });
-  };
-
   const clearForm = () => {
     setFormData({
       soil_n: "",
       soil_p: "",
       soil_k: "",
       temperature_c: "",
-      humidity_percent: 50,
+      humidity_percent: "",
       rainfall_mm: "",
       area_hectare: "",
     });
     setResult(null);
   };
 
-  const handlePredict = async () => {
+  const handlePredict = async (event) => {
+    event.preventDefault();
     // Basic validations: no empty fields, no negative values. Area must be > 0.
     const hasEmpty = Object.entries(formData).some(
       ([, v]) => v === "" || v === null || v === undefined,
@@ -112,180 +111,273 @@ const YieldPredictor = () => {
     }
   };
 
+  const humidityValue =
+    formData.humidity_percent === "" ? null : formData.humidity_percent;
+
   return (
-    <div className="min-h-screen mt-10 py-5 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 pt-10 pb-15">
+    <div className="page-frame relative z-10 pb-14">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="container mx-auto max-w-4xl w-full px-6 relative z-10"
+        className="w-full"
       >
-        <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-          Soybean Yield Intelligence
-        </h1>
-        <p className="text-slate-400 mb-4">
-          Enter soil and environmental parameters for Maharashtra-calibrated
-          results.
-        </p>
-
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <div className="bg-slate-800/40 p-4 rounded-xl border border-white/5 text-sm text-slate-300">
-            <p className="font-semibold text-white mb-1">About this page</p>
-            <p className="text-slate-400 text-sm">
-              Use this tool to estimate soybean yield (kg/ha) based on soil NPK,
-              weather and field area. Results are calibrated for Maharashtra.
+        <header className="mb-10 flex flex-col gap-6 border-b border-white/10 pb-8 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.14em] text-emerald-300">
+              Field intelligence <span className="px-2 text-slate-600">/</span>
+              Yield forecast
             </p>
-            <ul className="mt-2 text-xs text-slate-400 list-disc list-inside">
-              <li>Typical N (ppm): 5 - 50</li>
-              <li>Typical P (ppm): 5 - 40</li>
-              <li>Typical K (ppm): 50 - 400</li>
-              <li>Temperature: 10°C - 40°C</li>
-            </ul>
+            <h1 className="text-4xl font-bold text-white">
+              Soybean yield forecast
+            </h1>
+            <p className="mt-4 max-w-3xl text-lg leading-7 text-slate-300">
+              Enter your field readings to generate a yield estimate tailored to
+              Maharashtra growing conditions.
+            </p>
           </div>
-
-          <div className="flex gap-2">
-            <button
-              onClick={fillSampleData}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition"
-            >
-              Use Sample Data
-            </button>
-            <button
-              onClick={clearForm}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition"
-            >
-              Clear
-            </button>
+          <div className="inline-flex w-fit items-center gap-2 rounded-lg border border-emerald-400/20 bg-emerald-400/5 px-4 py-3 text-sm font-medium text-emerald-200">
+            <MapPin size={17} aria-hidden="true" />
+            Maharashtra calibrated
           </div>
-        </div>
+        </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-800/40 p-8 rounded-3xl border border-emerald-500/20 backdrop-blur-xl">
-          {/* NPK Section */}
-          <InputField
-            label="Soil Nitrogen (N)"
-            icon={Beaker}
-            name="soil_n"
-            value={formData.soil_n}
-            onChange={handleInputChange}
-            unit="ppm"
-          />
-          <InputField
-            label="Soil Phosphorus (P)"
-            icon={Beaker}
-            name="soil_p"
-            value={formData.soil_p}
-            onChange={handleInputChange}
-            unit="ppm"
-          />
-          <InputField
-            label="Soil Potassium (K)"
-            icon={Beaker}
-            name="soil_k"
-            value={formData.soil_k}
-            onChange={handleInputChange}
-            unit="ppm"
-          />
-          <InputField
-            label="Area (Hectares)"
-            icon={Leaf}
-            name="area_hectare"
-            value={formData.area_hectare}
-            onChange={handleInputChange}
-            unit="ha"
-          />
+        <div className="grid items-start gap-7 xl:grid-cols-[minmax(0,1.55fr)_minmax(18rem,0.85fr)]">
+          <form
+            onSubmit={handlePredict}
+            className="min-w-0 rounded-2xl border border-white/10 bg-slate-900/65 p-6 shadow-xl shadow-black/10 backdrop-blur sm:p-8"
+          >
+            <section aria-labelledby="soil-heading">
+              <div className="mb-6 flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-300">
+                    Soil profile
+                  </p>
+                  <h2
+                    id="soil-heading"
+                    className="mt-1 text-xl font-semibold text-white"
+                  >
+                    Nutrient readings
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={clearForm}
+                  title="Clear all fields"
+                  aria-label="Clear all fields"
+                  className="rounded-lg border border-white/10 p-3 text-slate-400 transition hover:border-white/20 hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-emerald-400"
+                >
+                  <RotateCcw size={18} aria-hidden="true" />
+                </button>
+              </div>
 
-          {/* Environmental Section */}
-          <InputField
-            label="Temperature"
-            icon={Thermometer}
-            name="temperature_c"
-            value={formData.temperature_c}
-            onChange={handleInputChange}
-            unit="°C"
-          />
-          <InputField
-            label="Rainfall"
-            icon={CloudRain}
-            name="rainfall_mm"
-            value={formData.rainfall_mm}
-            onChange={handleInputChange}
-            unit="mm"
-          />
+              <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+                <InputField
+                  label="Nitrogen (N)"
+                  icon={Beaker}
+                  name="soil_n"
+                  value={formData.soil_n}
+                  onChange={handleInputChange}
+                  unit="ppm"
+                />
+                <InputField
+                  label="Phosphorus (P)"
+                  icon={Beaker}
+                  name="soil_p"
+                  value={formData.soil_p}
+                  onChange={handleInputChange}
+                  unit="ppm"
+                />
+                <InputField
+                  label="Potassium (K)"
+                  icon={Beaker}
+                  name="soil_k"
+                  value={formData.soil_k}
+                  onChange={handleInputChange}
+                  unit="ppm"
+                />
+              </div>
+            </section>
 
-          {/* Humidity Slider - Spans 2 columns */}
-          <div className="md:col-span-2 bg-white/5 p-6 rounded-2xl border border-white/10 mt-2">
-            <div className="flex justify-between mb-4">
-              <label className="text-sm font-medium text-slate-400 flex items-center gap-2">
-                <Droplets size={16} className="text-cyan-400" /> Humidity
-              </label>
-              <span className="text-cyan-400 font-mono font-bold">
-                {formData.humidity_percent}%
+            <section
+              aria-labelledby="conditions-heading"
+              className="mt-10 border-t border-white/10 pt-8"
+            >
+              <div className="mb-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-300">
+                  Growing conditions
+                </p>
+                <h2
+                  id="conditions-heading"
+                  className="mt-1 text-xl font-semibold text-white"
+                >
+                  Field &amp; weather
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
+                <InputField
+                  label="Field area"
+                  icon={Leaf}
+                  name="area_hectare"
+                  value={formData.area_hectare}
+                  onChange={handleInputChange}
+                  unit="ha"
+                />
+                <InputField
+                  label="Temperature"
+                  icon={Thermometer}
+                  name="temperature_c"
+                  value={formData.temperature_c}
+                  onChange={handleInputChange}
+                  unit="°C"
+                />
+                <InputField
+                  label="Rainfall"
+                  icon={CloudRain}
+                  name="rainfall_mm"
+                  value={formData.rainfall_mm}
+                  onChange={handleInputChange}
+                  unit="mm"
+                />
+
+                <div className="sm:col-span-2 rounded-xl border border-white/10 bg-slate-950/30 p-5 sm:p-6">
+                  <div className="mb-5 flex items-center justify-between gap-3">
+                    <label
+                      htmlFor="humidity_percent"
+                      className="flex items-center gap-2 text-base font-medium text-slate-200"
+                    >
+                      <Droplets
+                        size={18}
+                        className="text-cyan-300"
+                        aria-hidden="true"
+                      />
+                      Humidity
+                    </label>
+                    <span className="min-w-28 text-right font-mono text-base font-semibold text-cyan-200">
+                      {humidityValue === null
+                        ? "Set value"
+                        : `${humidityValue}%`}
+                    </span>
+                  </div>
+                  <input
+                    id="humidity_percent"
+                    name="humidity_percent"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={humidityValue ?? 0}
+                    aria-valuetext={
+                      humidityValue === null
+                        ? "Not set"
+                        : `${humidityValue}% humidity`
+                    }
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        humidity_percent: Number(e.target.value),
+                      }))
+                    }
+                    className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-700 accent-cyan-400 transition hover:accent-cyan-300"
+                  />
+                  <div className="mt-3 flex justify-between text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
+                    <span>0%</span>
+                    <span>100%</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-400 px-6 py-4 text-lg font-semibold text-slate-950 shadow-lg shadow-emerald-950/30 transition hover:bg-emerald-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? (
+                <>
+                  <LoaderCircle
+                    size={20}
+                    className="animate-spin"
+                    aria-hidden="true"
+                  />
+                  Analyzing field readings
+                </>
+              ) : (
+                <>
+                  <TrendingUp size={20} aria-hidden="true" />
+                  Generate yield forecast
+                </>
+              )}
+            </button>
+          </form>
+
+          <motion.aside
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12 }}
+            aria-live="polite"
+            className="min-w-0 rounded-2xl border border-emerald-300/20 bg-linear-to-br from-emerald-400/10 via-slate-900/80 to-slate-900/80 p-7 shadow-xl shadow-black/10 sm:p-8"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-300/20 bg-emerald-300/10 text-emerald-200">
+                <TrendingUp size={21} aria-hidden="true" />
+              </div>
+              <span
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] ${
+                  result
+                    ? "bg-emerald-300/10 text-emerald-200"
+                    : "bg-white/5 text-slate-400"
+                }`}
+              >
+                {result ? "Complete" : "Forecast"}
               </span>
             </div>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={formData.humidity_percent}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  humidity_percent: Number(e.target.value),
-                })
-              }
-              className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500 hover:accent-cyan-400 transition-all"
-            />
-            <div className="flex justify-between text-[10px] text-slate-500 mt-2 uppercase tracking-widest font-bold">
-              <span>Low</span>
-              <span>Ideal (70-80%)</span>
-              <span>High</span>
-            </div>
-          </div>
 
-          <button
-            onClick={handlePredict}
-            disabled={loading}
-            className="md:col-span-2 mt-4 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-bold py-4 rounded-2xl transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                Analyzing Soil Data...
-              </span>
-            ) : (
-              "Generate Prediction Report"
-            )}
-          </button>
-        </div>
-
-        {result && (
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="mt-8 p-8 bg-gradient-to-r from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-[2.5rem] text-center backdrop-blur-md max-w-3xl mx-auto"
-          >
-            <p className="text-emerald-400 uppercase tracking-[0.2em] text-xs font-black mb-2">
-              AI Analysis Complete
-            </p>
-            <p className="text-slate-400 text-sm mb-1">
-              Predicted Soybean Yield
-            </p>
-            <h2 className="text-7xl font-black text-white tracking-tighter">
-              {Number(result?.predicted_yield) >= 0
-                ? Number(result?.predicted_yield).toLocaleString(undefined, {
-                    maximumFractionDigits: 2,
-                  })
-                : 0}
-              <span className="text-3xl font-light text-emerald-400 ml-2">
-                kg/ha
-              </span>
+            <h2 className="mt-7 text-2xl font-semibold text-white">
+              {result ? "Your yield outlook" : "Your forecast"}
             </h2>
-            <div className="mt-4 inline-block px-4 py-1 bg-emerald-500/20 rounded-full text-emerald-400 text-xs font-bold border border-emerald-500/30">
-              🎯 Model Accuracy:{" "}
-              {Math.max(0, Number(result?.model_accuracy || 0))}% | Maharashtra
-              Calibrated
+            <p className="mt-3 text-base leading-7 text-slate-300">
+              {result
+                ? "Estimated soybean yield from the readings you provided."
+                : "Your estimate will appear here after you submit your field readings."}
+            </p>
+
+            <div className="mt-9 border-y border-white/10 py-7">
+              <p className="text-sm font-medium uppercase tracking-[0.12em] text-slate-400">
+                Predicted yield
+              </p>
+              <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                <span className="text-5xl font-semibold tabular-nums text-white">
+                  {result
+                    ? Number(result?.predicted_yield) >= 0
+                      ? Number(result?.predicted_yield).toLocaleString(
+                          undefined,
+                          {
+                            maximumFractionDigits: 2,
+                          },
+                        )
+                      : 0
+                    : "--"}
+                </span>
+                <span className="text-base font-medium text-emerald-200">
+                  kg/ha
+                </span>
+              </div>
             </div>
-          </motion.div>
-        )}
+
+            {result ? (
+              <div className="mt-5 flex items-center justify-between gap-4 text-sm">
+                <span className="text-slate-400">Model accuracy</span>
+                <span className="font-semibold text-emerald-200">
+                  {Math.max(0, Number(result?.model_accuracy || 0))}%
+                </span>
+              </div>
+            ) : (
+              <p className="mt-6 text-sm leading-6 text-slate-400">
+                Estimates are calibrated for Maharashtra conditions.
+              </p>
+            )}
+          </motion.aside>
+        </div>
       </motion.div>
     </div>
   );

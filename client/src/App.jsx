@@ -8,9 +8,9 @@ import {
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-
 import { AuthProvider } from "./context/AuthContext";
 
+import Navbar from "./components/Navbar";
 import MainLayout from "./components/MainLayout";
 
 import Dashboard from "./page/Dashboard";
@@ -24,25 +24,28 @@ import PredictionHistory from "./page/PredictionHistory";
 
 const AppContent = () => {
   return (
-    <Routes>
-      {/* Public Routes - No Layout */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+    <>
+      <Navbar />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-      {/* Authenticated Routes - With Layout */}
-      <Route element={<MainLayout />}>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/yield" element={<YieldPredictor />} />
-        <Route path="/disease" element={<DiseaseDetector />} />
-        <Route path="/history" element={<PredictionHistory />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/settings" element={<Settings />} />
-      </Route>
+        {/* App routes */}
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/yield" element={<YieldPredictor />} />
+          <Route path="/disease" element={<DiseaseDetector />} />
+          <Route path="/history" element={<PredictionHistory />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={<Settings />} />
+        </Route>
 
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 };
 
@@ -50,7 +53,7 @@ const App = () => {
   return (
     <Router>
       <AuthProvider>
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 selection:bg-emerald-500/30 font-sans overflow-x-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 selection:bg-emerald-500/30 font-sans overflow-x-clip">
           <AppContent />
           <ToastContainer
             position="top-right"

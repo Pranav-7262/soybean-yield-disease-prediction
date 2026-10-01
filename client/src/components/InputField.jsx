@@ -9,12 +9,19 @@ const InputField = ({
   placeholder,
   unit,
 }) => (
-  <div className="flex flex-col gap-2 w-full">
-    <label className="text-sm font-medium text-slate-400 flex items-center gap-2">
-      {Icon ? <Icon size={16} /> : null} {label}
+  <div className="flex w-full min-w-0 flex-col gap-2">
+    <label
+      htmlFor={name}
+      className="flex items-center gap-2 text-base font-medium text-slate-200"
+    >
+      {Icon ? (
+        <Icon size={18} className="text-emerald-300" aria-hidden="true" />
+      ) : null}
+      {label}
     </label>
     <div className="relative">
       <input
+        id={name}
         type="number"
         name={name}
         value={value}
@@ -22,10 +29,10 @@ const InputField = ({
         min={0}
         step="any"
         placeholder={placeholder}
-        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all placeholder:text-slate-600"
+        className="w-full rounded-xl border border-white/10 bg-slate-950/45 py-4 pl-4 pr-16 text-lg text-white outline-none transition placeholder:text-slate-600 focus:border-emerald-300/60 focus:ring-4 focus:ring-emerald-400/10"
       />
       {unit && (
-        <span className="absolute right-4 top-3.5 text-xs text-slate-500">
+        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-400">
           {unit}
         </span>
       )}
