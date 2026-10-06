@@ -389,6 +389,25 @@ const PredictionHistory = () => {
                       label="Weather"
                       value={`${selectedPrediction.item.temperature_c}°C, ${selectedPrediction.item.humidity_percent}% humidity, ${selectedPrediction.item.rainfall_mm} mm rain`}
                     />
+                    {selectedPrediction.item.weather && (
+                      <>
+                        <Detail
+                          label="Weather source"
+                          value={`${selectedPrediction.item.weather.source}${selectedPrediction.item.weather.edited ? " (values edited)" : ""}`}
+                        />
+                        <Detail
+                          label="Weather location"
+                          value={selectedPrediction.item.weather.location}
+                        />
+                        <Detail
+                          label="Weather fetched"
+                          value={dateLabel(
+                            selectedPrediction.item.weather.fetched_at,
+                            true,
+                          )}
+                        />
+                      </>
+                    )}
                   </>
                 )}
                 <Detail

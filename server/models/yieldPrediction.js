@@ -39,6 +39,14 @@ const predictionSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    weather: {
+      source: String,
+      location: String,
+      fetched_at: Date,
+      latitude: Number,
+      longitude: Number,
+      edited: Boolean,
+    },
     area_hectare: {
       type: Number,
       required: true,

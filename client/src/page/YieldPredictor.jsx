@@ -11,6 +11,7 @@ import {
   TrendingUp,
   MapPin,
   LoaderCircle,
+  LocateFixed,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
@@ -21,6 +22,8 @@ const YieldPredictor = () => {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherInfo, setWeatherInfo] = useState(null);
   const [result, setResult] = useState(null);
   const [formData, setFormData] = useState({
     soil_n: "",
@@ -44,6 +47,13 @@ const YieldPredictor = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    if (
+      ["temperature_c", "humidity_percent", "rainfall_mm"].includes(name)
+    ) {
+      setWeatherInfo((previous) =>
+        previous ? { ...previous, edited: true } : null,
+      );
+    }
     // allow clearing the field (empty string) but clamp negatives to 0
     if (value === "") {
       setFormData((prev) => ({ ...prev, [name]: "" }));
@@ -66,14 +76,74 @@ const YieldPredictor = () => {
       rainfall_mm: "",
       area_hectare: "",
     });
+    setWeatherInfo(null);
     setResult(null);
+  };
+
+  const handleGetLocalWeather = async () => {
+    if (!navigator.geolocation) {
+      toast.error("Location is not available in this browser");
+      return;
+    }
+
+    setWeatherLoading(true);
+    try {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: false,
+          timeout: 10000,
+          maximumAge: 300000,
+        });
+      });
+      const { latitude, longitude } = position.coords;
+      const response = await api.yield.getCurrentWeather(latitude, longitude);
+      const weather = response.data?.data;
+
+      if (
+        !weather ||
+        !Number.isFinite(weather.temperature_c) ||
+        !Number.isFinite(weather.humidity_percent) ||
+        !Number.isFinite(weather.rainfall_mm)
+      ) {
+        throw new Error("Weather service returned invalid readings");
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        temperature_c: weather.temperature_c,
+        humidity_percent: weather.humidity_percent,
+        rainfall_mm: weather.rainfall_mm,
+      }));
+      setWeatherInfo({
+        source: weather.source,
+        fetched_at: weather.fetched_at,
+        latitude: weather.latitude,
+        longitude: weather.longitude,
+        location: `${weather.latitude.toFixed(3)}, ${weather.longitude.toFixed(3)}`,
+        edited: false,
+      });
+      toast.success("Local weather added to the forecast");
+    } catch (error) {
+      const message =
+        error.code === 1
+          ? "Location permission was denied. Allow location access or enter weather manually."
+          : error.code === 2 || error.code === 3
+            ? "Could not get your location. Try again or enter weather manually."
+            : error.response?.data?.message ||
+              error.message ||
+              "Could not load local weather";
+      toast.error(message);
+    } finally {
+      setWeatherLoading(false);
+    }
   };
 
   const handlePredict = async (event) => {
     event.preventDefault();
     // Basic validations: no empty fields, no negative values. Area must be > 0.
     const hasEmpty = Object.entries(formData).some(
-      ([, v]) => v === "" || v === null || v === undefined,
+      ([, value]) =>
+        value === "" || value === null || value === undefined,
     );
     if (hasEmpty) {
       toast.error(
@@ -95,7 +165,11 @@ const YieldPredictor = () => {
 
     setLoading(true);
     try {
-      const response = await api.yield.predict(formData);
+      const requestData = {
+        ...formData,
+        ...(weatherInfo && { weather: weatherInfo }),
+      };
+      const response = await api.yield.predict(requestData);
       const payload = response.data?.data || response.data;
 
       if (payload) {
@@ -212,6 +286,59 @@ const YieldPredictor = () => {
                 >
                   Field &amp; weather
                 </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-400">
+                  Enter weather manually, or fill temperature, humidity, and
+                  rainfall from your current location. Soil nutrients and field
+                  area remain your own field readings.
+                </p>
+                <p className="mt-2 text-xs leading-5 text-amber-200/80">
+                  Current weather is not a crop-season summary. For a
+                  meaningful yield estimate, use values that match the periods
+                  represented in the model&apos;s training data.
+                </p>
+              </div>
+
+              <div className="mb-6 rounded-xl border border-cyan-300/15 bg-cyan-300/5 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-medium text-white">
+                      Current local weather
+                    </p>
+                    <p className="mt-1 text-sm text-slate-400">
+                      Uses your device location with your permission. Readings
+                      are editable and can also be entered manually.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleGetLocalWeather}
+                    disabled={weatherLoading || loading}
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-cyan-300/25 bg-cyan-300/10 px-4 py-3 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-300/15 focus-visible:outline-2 focus-visible:outline-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {weatherLoading ? (
+                      <LoaderCircle
+                        size={17}
+                        className="animate-spin"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <LocateFixed size={17} aria-hidden="true" />
+                    )}
+                    {weatherLoading
+                      ? "Getting local weather"
+                      : "Use my location"}
+                  </button>
+                </div>
+                {weatherInfo && (
+                  <p className="mt-3 text-xs leading-5 text-cyan-100/80">
+                    Weather from {weatherInfo.source} near{" "}
+                    {weatherInfo.location}, fetched{" "}
+                    {new Date(weatherInfo.fetched_at).toLocaleString()}.
+                    Rainfall is the provider&apos;s current precipitation
+                    reading, not a crop-season total.
+                    {weatherInfo.edited && " Weather values were edited."}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
@@ -272,10 +399,15 @@ const YieldPredictor = () => {
                         : `${humidityValue}% humidity`
                     }
                     onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        humidity_percent: Number(e.target.value),
-                      }))
+                      {
+                        setWeatherInfo((previous) =>
+                          previous ? { ...previous, edited: true } : null,
+                        );
+                        setFormData((prev) => ({
+                          ...prev,
+                          humidity_percent: Number(e.target.value),
+                        }));
+                      }
                     }
                     className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-700 accent-cyan-400 transition hover:accent-cyan-300"
                   />

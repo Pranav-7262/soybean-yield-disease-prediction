@@ -6,6 +6,7 @@ import yieldRoutes from "./routes/yieldRoutes.js";
 import diseaseRoute from "./routes/diseaseRoute.js";
 import authRoutes from "./routes/authRoutes.js";
 import historyRoutes from "./routes/historyRoutes.js";
+import weatherRoutes from "./routes/weatherRoutes.js";
 import cookieParser from "cookie-parser";
 import { connectDB } from "./config/db.js";
 
@@ -25,6 +26,7 @@ app.use(morgan("dev"));
 app.use("/api/auth", authRoutes);
 
 app.use("/api/yield", yieldRoutes);
+app.use("/api/weather", weatherRoutes);
 app.use("/api/history", historyRoutes);
 
 app.use("/api/disease", diseaseRoute);

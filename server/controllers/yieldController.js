@@ -14,19 +14,32 @@ export const getYieldPrediction = async_handler(async (req, res) => {
     soil_p,
     soil_k,
     area_hectare,
+    weather,
   } = req.body;
 
-  // Validate required fields
-  if (
-    !rainfall_mm ||
-    !temperature_c ||
-    !humidity_percent ||
-    !soil_n ||
-    !soil_p ||
-    !soil_k ||
-    !area_hectare
-  ) {
-    throw new ApiError(400, "All fields are required");
+  const requiredFields = {
+    rainfall_mm,
+    temperature_c,
+    humidity_percent,
+    soil_n,
+    soil_p,
+    soil_k,
+    area_hectare,
+  };
+  const hasInvalidField = Object.values(requiredFields).some(
+    (value) =>
+      value === "" ||
+      value === null ||
+      value === undefined ||
+      !Number.isFinite(Number(value)) ||
+      Number(value) < 0,
+  );
+
+  if (hasInvalidField || Number(area_hectare) <= 0) {
+    throw new ApiError(
+      400,
+      "All yield inputs must be valid non-negative numbers and field area must be greater than zero",
+    );
   }
 
   // Get prediction from ML service
@@ -48,6 +61,16 @@ export const getYieldPrediction = async_handler(async (req, res) => {
     humidity_percent,
     rainfall_mm,
     area_hectare,
+    ...(weather && {
+      weather: {
+        source: weather.source,
+        location: weather.location,
+        fetched_at: weather.fetched_at,
+        latitude: weather.latitude,
+        longitude: weather.longitude,
+        edited: weather.edited,
+      },
+    }),
     model_accuracy: result.model_accuracy,
   });
 
