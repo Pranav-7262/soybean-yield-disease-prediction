@@ -105,6 +105,10 @@ const DiseaseDetector = () => {
         severity: "No Disease Detected",
         description:
           "Your crop appears healthy. Continue monitoring regularly.",
+        recommendations: [
+          "Continue routine scouting and keep notes or photos so you can spot changes over time.",
+          "Do not apply a treatment based on this result alone.",
+        ],
       },
       rust: {
         icon: AlertTriangle,
@@ -113,6 +117,10 @@ const DiseaseDetector = () => {
         severity: "Moderate",
         description:
           "Fungal infection detected. Apply fungicides and improve air circulation.",
+        recommendations: [
+          "Inspect several plants and both sides of leaves for similar symptoms.",
+          "Ask a local agricultural extension worker to confirm the diagnosis before choosing a treatment.",
+        ],
       },
       powdery_mildew: {
         icon: AlertTriangle,
@@ -121,6 +129,10 @@ const DiseaseDetector = () => {
         severity: "Moderate",
         description:
           "Powdery mildew detected. Use appropriate fungal treatments.",
+        recommendations: [
+          "Check nearby plants for similar leaf symptoms and record where they appear in the field.",
+          "Confirm the diagnosis with a local agricultural expert before applying any treatment.",
+        ],
       },
       leaf_spot: {
         icon: ShieldAlert,
@@ -128,6 +140,10 @@ const DiseaseDetector = () => {
         bgColor: "bg-red-500/10",
         severity: "High",
         description: "Leaf spot disease detected. Isolate affected plants.",
+        recommendations: [
+          "Inspect neighboring plants and note whether symptoms are spreading.",
+          "Get the symptoms confirmed locally before removing plants or applying a treatment.",
+        ],
       },
       dry_leaf: {
         icon: AlertTriangle,
@@ -136,6 +152,10 @@ const DiseaseDetector = () => {
         severity: "Moderate",
         description:
           "The leaf appears dry or stressed. Check irrigation, heat exposure, and soil moisture.",
+        recommendations: [
+          "Check soil moisture, recent heat exposure, and whether irrigation reaches this part of the field.",
+          "Compare several plants; dry-looking leaves can result from more than one cause.",
+        ],
       },
       septoria_brown_spot: {
         icon: ShieldAlert,
@@ -144,6 +164,10 @@ const DiseaseDetector = () => {
         severity: "High",
         description:
           "Septoria brown spot detected. Remove affected leaves and improve field airflow.",
+        recommendations: [
+          "Inspect lower leaves and nearby plants for similar spots, and record whether symptoms are increasing.",
+          "Ask a local agricultural expert to confirm the disease and advise on locally appropriate management.",
+        ],
       },
       southern_blight: {
         icon: ShieldAlert,
@@ -152,6 +176,10 @@ const DiseaseDetector = () => {
         severity: "High",
         description:
           "Southern blight detected. Remove affected plants and avoid excess soil moisture.",
+        recommendations: [
+          "Inspect the stem base and nearby plants, and note any areas with standing or persistently wet soil.",
+          "Seek prompt confirmation from a local agricultural expert before taking treatment or removal decisions.",
+        ],
       },
       vein_necrosis: {
         icon: ShieldAlert,
@@ -160,6 +188,10 @@ const DiseaseDetector = () => {
         severity: "High",
         description:
           "Vein necrosis detected. Isolate affected plants and monitor nearby leaves closely.",
+        recommendations: [
+          "Check nearby plants and photograph symptoms clearly, including the full leaf and its underside.",
+          "Have the symptoms confirmed locally; visual symptoms can have multiple causes.",
+        ],
       },
       yellow_mosaic: {
         icon: ShieldAlert,
@@ -168,6 +200,10 @@ const DiseaseDetector = () => {
         severity: "High",
         description:
           "Leaves show bright yellow patches, green-yellow mottling, or small yellow spots near the veins.",
+        recommendations: [
+          "Inspect nearby plants for similar mottling and record where affected plants occur.",
+          "Contact a local agricultural expert promptly to confirm the cause and discuss appropriate next steps.",
+        ],
       },
       bacterial_leaf_blight: {
         icon: ShieldAlert,
@@ -175,6 +211,10 @@ const DiseaseDetector = () => {
         bgColor: "bg-red-500/10",
         severity: "High",
         description: "Leaf spot disease detected. Isolate affected plants.",
+        recommendations: [
+          "Inspect nearby plants for similar symptoms and avoid handling plants while foliage is wet.",
+          "Confirm the diagnosis with a local agricultural expert before applying any treatment.",
+        ],
       },
     };
 
@@ -186,6 +226,10 @@ const DiseaseDetector = () => {
         severity: "Needs review",
         description:
           "The model returned an unfamiliar result. Review the image and monitor the crop closely.",
+        recommendations: [
+          "Retake a clear photo in natural light showing the whole leaf and visible symptoms.",
+          "Compare symptoms on several plants and ask a local agricultural expert to review the result.",
+        ],
       }
     );
   };
@@ -375,30 +419,36 @@ const DiseaseDetector = () => {
                 )}
 
                 {/* Recommendations */}
-                {prediction.recommendations && (
-                  <div className="bg-slate-800/40 backdrop-blur border border-emerald-500/20 rounded-2xl p-8">
-                    <h3 className="text-lg font-semibold text-white mb-4">
-                      Recommendations
-                    </h3>
-                    <ul className="space-y-3">
-                      {prediction.recommendations.map((rec, i) => (
+                <div className="bg-slate-800/40 backdrop-blur border border-emerald-500/20 rounded-2xl p-8">
+                  <h3 className="text-lg font-semibold text-white mb-2">
+                    Recommended next steps
+                  </h3>
+                  <p className="text-sm text-slate-400 mb-4">
+                    Use this image-based result as a guide, not a confirmed
+                    diagnosis.
+                  </p>
+                  <ul className="space-y-3">
+                    {getDiseaseInfo(prediction.prediction).recommendations.map(
+                      (recommendation, index) => (
                         <motion.li
-                          key={i}
+                          key={recommendation}
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: i * 0.1 }}
+                          transition={{ delay: index * 0.1 }}
                           className="flex items-start gap-3"
                         >
                           <CheckCircle
                             size={20}
                             className="text-emerald-400 flex-shrink-0 mt-1"
                           />
-                          <span className="text-slate-300">{rec}</span>
+                          <span className="text-slate-300">
+                            {recommendation}
+                          </span>
                         </motion.li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                      ),
+                    )}
+                  </ul>
+                </div>
 
                 {/* New Analysis Button */}
                 <button

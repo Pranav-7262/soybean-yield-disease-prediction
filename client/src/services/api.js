@@ -70,6 +70,9 @@ export const api = {
     predict: async (data) => {
       return axiosInstance.post("/yield/predict", data);
     },
+    getDistricts: async () => {
+      return axiosInstance.get("/yield/districts");
+    },
     getCurrentWeather: async (latitude, longitude) => {
       return axiosInstance.get("/weather/current", {
         params: { latitude, longitude },

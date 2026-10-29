@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel 
-from services.yield_service import predict_yield
+from pydantic import BaseModel, Field
+from services.yield_service import get_supported_districts, predict_yield
 from fastapi import UploadFile, File
 import shutil
 import os
@@ -18,22 +18,28 @@ ALLOWED_TYPES = [
 ]
 
 class YieldRequest(BaseModel):
-    rainfall_mm: float
+    district: str = Field(min_length=1)
+    rainfall_mm: float = Field(ge=0)
     temperature_c: float
-    humidity_percent: float
-    soil_n: float
-    soil_p: float
-    soil_k: float
-    area_hectare: float
+    humidity_percent: float = Field(ge=0, le=100)
+    soil_n: float = Field(ge=0)
+    soil_p: float = Field(ge=0)
+    soil_k: float = Field(ge=0)
+    area_hectare: float = Field(gt=0)
 
 @app.get("/")
 def home():
     return {"message": "Soybean Agri-AI ML Service is running! ✅"}
 
+@app.get("/predict/yield/districts")
+def get_yield_districts_api():
+    return {"success": True, "districts": get_supported_districts()}
+
 @app.post("/predict/yield")
 async def predict_yield_api(request: YieldRequest):
     try:
         data = {
+            "district": request.district,
             "rainfall_mm": request.rainfall_mm,
             "temperature_c": request.temperature_c,
             "humidity_percent": request.humidity_percent,
@@ -46,15 +52,21 @@ async def predict_yield_api(request: YieldRequest):
         result = predict_yield(data)
 
         if result.get("status") == "error":
-            raise HTTPException(status_code=500, detail=result.get("error"))
+            raise HTTPException(status_code=400, detail=result.get("error"))
 
         return {
             "success": True,
             "predicted_yield": result.get("yield_kg_per_hectare"),
             "unit": "kg/hectare",
-            "model_accuracy": "99.75%"
+            "estimated_total_production_kg": result.get("estimated_total_production_kg"),
+            "model_version": result.get("model_version"),
+            "validation_metrics": result.get("validation_metrics"),
+            "input_notice": result.get("input_notice"),
+            "warnings": result.get("warnings", []),
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -106,4 +118,3 @@ async def predict_disease_api(file: UploadFile = File(...)):
             status_code=500,
             detail=str(e)
         )
-

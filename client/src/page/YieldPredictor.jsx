@@ -17,6 +17,7 @@ import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import { api } from "../services/api";
 import InputField from "../components/InputField";
+import SelectField from "../components/SelectField";
 
 const YieldPredictor = () => {
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -24,8 +25,13 @@ const YieldPredictor = () => {
   const [loading, setLoading] = useState(false);
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherInfo, setWeatherInfo] = useState(null);
+  const [seasonalWeatherConfirmed, setSeasonalWeatherConfirmed] =
+    useState(false);
+  const [districts, setDistricts] = useState([]);
+  const [districtsLoading, setDistrictsLoading] = useState(true);
   const [result, setResult] = useState(null);
   const [formData, setFormData] = useState({
+    district: "",
     soil_n: "",
     soil_p: "",
     soil_k: "",
@@ -41,20 +47,51 @@ const YieldPredictor = () => {
     }
   }, [authLoading, isAuthenticated, navigate]);
 
+  useEffect(() => {
+    if (authLoading || !isAuthenticated) return undefined;
+    let active = true;
+    api.yield
+      .getDistricts()
+      .then((response) => {
+        const payload = response.data?.data || response.data;
+        if (active && Array.isArray(payload?.districts)) {
+          setDistricts(payload.districts);
+        }
+      })
+      .catch((error) => {
+        toast.error(
+          error.response?.data?.message ||
+            "Could not load supported Maharashtra districts",
+        );
+      })
+      .finally(() => {
+        if (active) setDistrictsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [authLoading, isAuthenticated]);
+
   if (authLoading || (!authLoading && !isAuthenticated)) {
     return null;
   }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    setResult(null);
+    if (name === "district") {
+      setFormData((prev) => ({ ...prev, district: value }));
+      return;
+    }
     if (
       ["temperature_c", "humidity_percent", "rainfall_mm"].includes(name)
     ) {
+      setSeasonalWeatherConfirmed(false);
       setWeatherInfo((previous) =>
         previous ? { ...previous, edited: true } : null,
       );
     }
-    // allow clearing the field (empty string) but clamp negatives to 0
+    
     if (value === "") {
       setFormData((prev) => ({ ...prev, [name]: "" }));
       return;
@@ -68,6 +105,7 @@ const YieldPredictor = () => {
 
   const clearForm = () => {
     setFormData({
+      district: "",
       soil_n: "",
       soil_p: "",
       soil_k: "",
@@ -77,6 +115,7 @@ const YieldPredictor = () => {
       area_hectare: "",
     });
     setWeatherInfo(null);
+    setSeasonalWeatherConfirmed(false);
     setResult(null);
   };
 
@@ -114,6 +153,7 @@ const YieldPredictor = () => {
         humidity_percent: weather.humidity_percent,
         rainfall_mm: weather.rainfall_mm,
       }));
+      setResult(null);
       setWeatherInfo({
         source: weather.source,
         fetched_at: weather.fetched_at,
@@ -122,7 +162,10 @@ const YieldPredictor = () => {
         location: `${weather.latitude.toFixed(3)}, ${weather.longitude.toFixed(3)}`,
         edited: false,
       });
-      toast.success("Local weather added to the forecast");
+      setSeasonalWeatherConfirmed(false);
+      toast.success(
+        "Current local weather added as a reference. Replace it with June-September seasonal values before predicting.",
+      );
     } catch (error) {
       const message =
         error.code === 1
@@ -140,6 +183,12 @@ const YieldPredictor = () => {
 
   const handlePredict = async (event) => {
     event.preventDefault();
+    if (weatherInfo?.source && !seasonalWeatherConfirmed) {
+      toast.error(
+        "Confirm that you replaced all current readings with June-September seasonal summaries before predicting.",
+      );
+      return;
+    }
     // Basic validations: no empty fields, no negative values. Area must be > 0.
     const hasEmpty = Object.entries(formData).some(
       ([, value]) =>
@@ -244,6 +293,12 @@ const YieldPredictor = () => {
                 </button>
               </div>
 
+              <p className="mb-6 rounded-lg border border-amber-300/20 bg-amber-300/5 px-4 py-3 text-sm leading-6 text-amber-100/80">
+                Soil N/P/K readings are saved with your prediction, but this
+                model does not use them because matching historical soil-test
+                data was not available.
+              </p>
+
               <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
                 <InputField
                   label="Nitrogen (N)"
@@ -276,6 +331,23 @@ const YieldPredictor = () => {
               aria-labelledby="conditions-heading"
               className="mt-10 border-t border-white/10 pt-8"
             >
+              <div className="mb-8">
+                <SelectField
+                  label="Maharashtra district"
+                  icon={MapPin}
+                  name="district"
+                  value={formData.district}
+                  onChange={handleInputChange}
+                  options={districts}
+                />
+                <p className="mt-2 text-xs text-slate-500" aria-live="polite">
+                  {districtsLoading
+                    ? "Loading districts supported by the trained model..."
+                    : districts.length
+                      ? "The model is trained on historical records for these districts."
+                      : "Districts could not be loaded. Refresh the page or try again later."}
+                </p>
+              </div>
               <div className="mb-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-300">
                   Growing conditions
@@ -287,14 +359,15 @@ const YieldPredictor = () => {
                   Field &amp; weather
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-400">
-                  Enter weather manually, or fill temperature, humidity, and
-                  rainfall from your current location. Soil nutrients and field
-                  area remain your own field readings.
+                  Choose your district and enter weather manually. Field area
+                  is used to estimate total production; soil nutrients are
+                  retained in your history.
                 </p>
                 <p className="mt-2 text-xs leading-5 text-amber-200/80">
-                  Current weather is not a crop-season summary. For a
-                  meaningful yield estimate, use values that match the periods
-                  represented in the model&apos;s training data.
+                  The model expects total rainfall and average temperature and
+                  humidity for June-September. Current local weather is not a
+                  season summary; replace it with seasonal values before
+                  predicting.
                 </p>
               </div>
 
@@ -302,11 +375,12 @@ const YieldPredictor = () => {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="font-medium text-white">
-                      Current local weather
+                      Current local weather reference
                     </p>
                     <p className="mt-1 text-sm text-slate-400">
-                      Uses your device location with your permission. Readings
-                      are editable and can also be entered manually.
+                      Uses your device location with your permission. These
+                      current readings are for reference only, not model-ready
+                      seasonal values.
                     </p>
                   </div>
                   <button
@@ -339,6 +413,25 @@ const YieldPredictor = () => {
                     {weatherInfo.edited && " Weather values were edited."}
                   </p>
                 )}
+                {weatherInfo && (
+                  <label className="mt-3 flex items-start gap-2 text-xs leading-5 text-cyan-50/90">
+                    <input
+                      type="checkbox"
+                      checked={seasonalWeatherConfirmed}
+                      onChange={(event) => {
+                        setSeasonalWeatherConfirmed(event.target.checked);
+                        setWeatherInfo((previous) =>
+                          previous
+                            ? { ...previous, edited: event.target.checked }
+                            : null,
+                        );
+                      }}
+                      className="mt-1 accent-cyan-300"
+                    />
+                    I replaced the current readings with the June-September
+                    rainfall total and season-average temperature and humidity.
+                  </label>
+                )}
               </div>
 
               <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
@@ -351,7 +444,7 @@ const YieldPredictor = () => {
                   unit="ha"
                 />
                 <InputField
-                  label="Temperature"
+                  label="Temperature (season mean)"
                   icon={Thermometer}
                   name="temperature_c"
                   value={formData.temperature_c}
@@ -359,7 +452,7 @@ const YieldPredictor = () => {
                   unit="°C"
                 />
                 <InputField
-                  label="Rainfall"
+                  label="Rainfall (season total)"
                   icon={CloudRain}
                   name="rainfall_mm"
                   value={formData.rainfall_mm}
@@ -378,7 +471,7 @@ const YieldPredictor = () => {
                         className="text-cyan-300"
                         aria-hidden="true"
                       />
-                      Humidity
+                      Humidity (season mean)
                     </label>
                     <span className="min-w-28 text-right font-mono text-base font-semibold text-cyan-200">
                       {humidityValue === null
@@ -398,17 +491,17 @@ const YieldPredictor = () => {
                         ? "Not set"
                         : `${humidityValue}% humidity`
                     }
-                    onChange={(e) =>
-                      {
-                        setWeatherInfo((previous) =>
-                          previous ? { ...previous, edited: true } : null,
-                        );
-                        setFormData((prev) => ({
-                          ...prev,
-                          humidity_percent: Number(e.target.value),
-                        }));
-                      }
-                    }
+                    onChange={(e) => {
+                      setResult(null);
+                      setSeasonalWeatherConfirmed(false);
+                      setWeatherInfo((previous) =>
+                        previous ? { ...previous, edited: true } : null,
+                      );
+                      setFormData((prev) => ({
+                        ...prev,
+                        humidity_percent: Number(e.target.value),
+                      }));
+                    }}
                     className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-700 accent-cyan-400 transition hover:accent-cyan-300"
                   />
                   <div className="mt-3 flex justify-between text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
@@ -421,7 +514,7 @@ const YieldPredictor = () => {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || districtsLoading || districts.length === 0}
               className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-400 px-6 py-4 text-lg font-semibold text-slate-950 shadow-lg shadow-emerald-950/30 transition hover:bg-emerald-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? (
@@ -497,11 +590,101 @@ const YieldPredictor = () => {
             </div>
 
             {result ? (
-              <div className="mt-5 flex items-center justify-between gap-4 text-sm">
-                <span className="text-slate-400">Model accuracy</span>
-                <span className="font-semibold text-emerald-200">
-                  {Math.max(0, Number(result?.model_accuracy || 0))}%
-                </span>
+              <div className="mt-5 space-y-7">
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-slate-400">District</span>
+                    <span className="font-semibold text-emerald-200">
+                      {districts.find(
+                        (district) => district.value === formData.district,
+                      )?.label || formData.district}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-slate-400">Estimated total</span>
+                    <span className="font-semibold text-emerald-200">
+                      {Number(
+                        result.estimated_total_production_kg,
+                      ).toLocaleString(undefined, {
+                        maximumFractionDigits: 2,
+                      })}{" "}
+                      kg
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-slate-400">Holdout MAE</span>
+                    <span className="font-semibold text-slate-200">
+                      {Number(
+                        result.validation_metrics?.mae_kg_per_hectare,
+                      ).toLocaleString()}{" "}
+                      kg/ha
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-slate-400">Holdout R²</span>
+                    <span className="font-semibold text-slate-200">
+                      {Number(
+                        result.validation_metrics?.r2,
+                      ).toFixed(3)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-slate-400">Model version</span>
+                    <span className="font-semibold text-slate-200">
+                      {result.model_version}
+                    </span>
+                  </div>
+                  <p className="text-xs leading-5 text-slate-500">
+                    Validation on held-out historical years; not a probability
+                    or guarantee for an individual field.
+                  </p>
+                  {result.input_notice && (
+                    <p className="rounded-lg border border-amber-300/20 bg-amber-300/5 px-3 py-2 text-xs leading-5 text-amber-100/80">
+                      {result.input_notice}
+                    </p>
+                  )}
+                  {result.warnings?.map((warning) => (
+                    <p
+                      key={warning}
+                      className="rounded-lg border border-amber-300/20 bg-amber-300/5 px-3 py-2 text-xs leading-5 text-amber-100/80"
+                    >
+                      {warning}
+                    </p>
+                  ))}
+                </div>
+
+                <section
+                  aria-labelledby="yield-recommendations-heading"
+                  className="border-t border-white/10 pt-6"
+                >
+                  <h3
+                    id="yield-recommendations-heading"
+                    className="text-lg font-semibold text-white"
+                  >
+                    Recommended next steps
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-400">
+                    Treat this as an estimate for planning, not a guaranteed
+                    harvest.
+                  </p>
+                  <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+                    <li>
+                      Check that rainfall and weather values represent the crop
+                      season, and that soil nutrient readings come from a
+                      reliable soil test.
+                    </li>
+                    <li>
+                      Compare the estimate with your previous harvests and a
+                      trusted local benchmark for your area and season.
+                    </li>
+                    <li>
+                      If the estimate differs substantially from what you
+                      expect, recheck the inputs and consult a local
+                      agricultural expert before changing fertilizer or
+                      irrigation practices.
+                    </li>
+                  </ul>
+                </section>
               </div>
             ) : (
               <p className="mt-6 text-sm leading-6 text-slate-400">

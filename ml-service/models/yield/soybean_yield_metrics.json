@@ -1,0 +1,79 @@
+{
+  "model_version": "maharashtra-soybean-yield-2.0.0",
+  "target_unit": "kg/hectare",
+  "validation": {
+    "method": "Train on 1998-2011; test on 2012-2014",
+    "start_year": 2012,
+    "end_year": 2014,
+    "observations": 84,
+    "districts": 29,
+    "mae_kg_per_hectare": 394.82,
+    "rmse_kg_per_hectare": 500.94,
+    "r2": 0.4568,
+    "district_average_baseline_mae_kg_per_hectare": 462.82
+  },
+  "training": {
+    "observations": 448,
+    "start_year": 1998,
+    "end_year": 2014
+  },
+  "features": [
+    "district",
+    "rainfall_mm",
+    "temperature_c",
+    "humidity_percent"
+  ],
+  "excluded_inputs": [
+    "soil_n",
+    "soil_p",
+    "soil_k",
+    "area_hectare"
+  ],
+  "districts": [
+    "AHMEDNAGAR",
+    "AKOLA",
+    "AMRAVATI",
+    "AURANGABAD",
+    "BEED",
+    "BHANDARA",
+    "BULDHANA",
+    "CHANDRAPUR",
+    "DHULE",
+    "GADCHIROLI",
+    "GONDIA",
+    "HINGOLI",
+    "JALGAON",
+    "JALNA",
+    "KOLHAPUR",
+    "LATUR",
+    "NAGPUR",
+    "NANDED",
+    "NANDURBAR",
+    "NASHIK",
+    "OSMANABAD",
+    "PARBHANI",
+    "PUNE",
+    "SANGLI",
+    "SATARA",
+    "SOLAPUR",
+    "WARDHA",
+    "WASHIM",
+    "YAVATMAL"
+  ],
+  "input_ranges_p05_p95": {
+    "rainfall_mm": [
+      448.19,
+      1485.55
+    ],
+    "temperature_c": [
+      23.88,
+      28.5
+    ],
+    "humidity_percent": [
+      70.94,
+      88.45
+    ]
+  },
+  "yield_source": "Public Maharashtra crop-production table mirrored at https://github.com/DUDIMETLA-SWATHI/crop-production/tree/df51a358b57d32055deb77f346101e2895a68ca3",
+  "weather_source": "NASA POWER Daily API (PRECTOTCORR, T2M, RH2M), June-September"
+}

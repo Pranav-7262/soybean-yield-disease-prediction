@@ -11,6 +11,8 @@ const predictionSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    estimated_total_production_kg: Number,
+    district: String,
     unit: {
       type: String,
       default: "kg/hectare",
@@ -53,8 +55,10 @@ const predictionSchema = new mongoose.Schema(
     },
     model_accuracy: {
       type: String,
-      default: "99.75%",
     },
+    validation_mae_kg_per_hectare: Number,
+    validation_r2: Number,
+    model_version: String,
   },
   {
     timestamps: true,

@@ -10,3 +10,13 @@ export const predictYield = async (data) => {
     throw error;
   }
 };
+
+export const getYieldDistricts = async () => {
+  try {
+    const response = await axios.get(`${ML_API}/predict/yield/districts`);
+    return response.data;
+  } catch (error) {
+    console.error("ML API Error:", error.message);
+    throw error;
+  }
+};

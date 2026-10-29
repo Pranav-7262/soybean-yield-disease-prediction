@@ -101,16 +101,37 @@ const PredictionCard = ({ prediction, type, onView, onDelete }) => {
       </div>
 
       <div className="space-y-3 border-y border-slate-700/60 py-4 text-sm">
-        <div className="flex justify-between gap-4">
-          <span className="text-slate-400">
-            {disease ? "Confidence" : "Model accuracy"}
-          </span>
-          <span className="font-semibold text-slate-200">
-            {disease
-              ? confidenceLabel
-              : prediction.model_accuracy || "Not available"}
-          </span>
-        </div>
+        {disease ? (
+          <div className="flex justify-between gap-4">
+            <span className="text-slate-400">Confidence</span>
+            <span className="font-semibold text-slate-200">
+              {confidenceLabel}
+            </span>
+          </div>
+        ) : (
+          <>
+            {prediction.district && (
+              <div className="flex justify-between gap-4">
+                <span className="text-slate-400">District</span>
+                <span className="font-semibold text-slate-200">
+                  {prediction.district}
+                </span>
+              </div>
+            )}
+            {Number.isFinite(Number(prediction.validation_mae_kg_per_hectare)) &&
+              prediction.validation_mae_kg_per_hectare !== null && (
+                <div className="flex justify-between gap-4">
+                  <span className="text-slate-400">Historical holdout MAE</span>
+                  <span className="font-semibold text-slate-200">
+                    {Number(
+                      prediction.validation_mae_kg_per_hectare,
+                    ).toLocaleString()}{" "}
+                    kg/ha
+                  </span>
+                </div>
+              )}
+          </>
+        )}
         {disease && prediction.model_accuracy && (
           <div className="flex justify-between gap-4">
             <span className="text-slate-400">Model accuracy</span>
@@ -373,7 +394,8 @@ const PredictionHistory = () => {
                     value={`${(Number(selectedPrediction.item.confidence) <= 1 ? Number(selectedPrediction.item.confidence) * 100 : Number(selectedPrediction.item.confidence)).toFixed(1)}%`}
                   />
                 )}
-                {selectedPrediction.item.model_accuracy && (
+                {selectedPrediction.type === "disease" &&
+                  selectedPrediction.item.model_accuracy && (
                   <Detail
                     label="Model accuracy"
                     value={selectedPrediction.item.model_accuracy}
@@ -381,13 +403,47 @@ const PredictionHistory = () => {
                 )}
                 {selectedPrediction.type === "yield" && (
                   <>
+                    {selectedPrediction.item.district && (
+                      <Detail
+                        label="District"
+                        value={selectedPrediction.item.district}
+                      />
+                    )}
+                    {selectedPrediction.item.estimated_total_production_kg !=
+                      null && (
+                      <Detail
+                        label="Estimated total"
+                        value={`${Number(selectedPrediction.item.estimated_total_production_kg).toLocaleString()} kg`}
+                      />
+                    )}
+                    {selectedPrediction.item.validation_mae_kg_per_hectare !=
+                      null && (
+                      <Detail
+                        label="Historical holdout MAE"
+                        value={`${Number(selectedPrediction.item.validation_mae_kg_per_hectare).toLocaleString()} kg/ha`}
+                      />
+                    )}
+                    {selectedPrediction.item.validation_r2 != null && (
+                      <Detail
+                        label="Historical holdout R²"
+                        value={Number(
+                          selectedPrediction.item.validation_r2,
+                        ).toFixed(3)}
+                      />
+                    )}
+                    {selectedPrediction.item.model_version && (
+                      <Detail
+                        label="Model version"
+                        value={selectedPrediction.item.model_version}
+                      />
+                    )}
                     <Detail
                       label="Field area"
                       value={`${selectedPrediction.item.area_hectare} ha`}
                     />
                     <Detail
-                      label="Weather"
-                      value={`${selectedPrediction.item.temperature_c}°C, ${selectedPrediction.item.humidity_percent}% humidity, ${selectedPrediction.item.rainfall_mm} mm rain`}
+                      label="Season weather"
+                      value={`${selectedPrediction.item.temperature_c}°C mean, ${selectedPrediction.item.humidity_percent}% humidity mean, ${selectedPrediction.item.rainfall_mm} mm rainfall total (June-September)`}
                     />
                     {selectedPrediction.item.weather && (
                       <>

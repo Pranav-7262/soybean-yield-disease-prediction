@@ -1,57 +1,73 @@
-import pickle
-import numpy as np
+import json
 import pandas as pd
 import os
+import joblib
 
-# Path to the trained soybean model
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "../yeild-prediction/soybean_model.pkl")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODEL_DIR = os.path.join(BASE_DIR, "models", "yield")
+MODEL_PATH = os.path.join(MODEL_DIR, "soybean_yield_model.joblib")
+METRICS_PATH = os.path.join(MODEL_DIR, "soybean_yield_metrics.json")
+DISPLAY_NAMES = {
+    "AHMEDNAGAR": "Ahilyanagar (Ahmednagar)",
+    "AURANGABAD": "Chhatrapati Sambhajinagar (Aurangabad)",
+    "OSMANABAD": "Dharashiv (Osmanabad)",
+}
 
-# Load model once at startup
-try:
-    with open(MODEL_PATH, 'rb') as f:
-        model = pickle.load(f)
-    print("✅ Soybean Yield Model loaded successfully!")
-except Exception as e:
-    print(f"❌ Failed to load model: {e}")
-    model = None
+if not os.path.isfile(MODEL_PATH):
+    raise FileNotFoundError(f"Trained soybean yield model is missing: {MODEL_PATH}")
+if not os.path.isfile(METRICS_PATH):
+    raise FileNotFoundError(f"Soybean yield model metrics are missing: {METRICS_PATH}")
+
+model = joblib.load(MODEL_PATH)
+with open(METRICS_PATH, encoding="utf-8") as metrics_file:
+    model_metadata = json.load(metrics_file)
+
+
+def get_supported_districts():
+    return [
+        {"value": district, "label": DISPLAY_NAMES.get(district, district.title())}
+        for district in model_metadata["districts"]
+    ]
 
 def predict_yield(data):
-    """
-    Predict soybean yield based on environmental and soil features.
-    
-    Expected input data keys:
-    - rainfall_mm: Rainfall in mm
-    - temperature_c: Temperature in Celsius
-    - humidity_percent: Humidity percentage
-    - soil_n: Soil Nitrogen
-    - soil_p: Soil Phosphorus
-    - soil_k: Soil Potassium
-    - area_hectare: Area in hectares
-    """
-    if model is None:
-        return {"error": "Model not initialized", "status": "error"}
-    
-    try:
-        # Model expects: [Rainfall_mm_x, Temperature_C_x, Humidity_Percent, Soil_N, Soil_P, Soil_K, Area_hectare]
-        # Use pandas DataFrame with proper column names to avoid scikit-learn warnings
-        features_df = pd.DataFrame([[
-            data.get("rainfall_mm", 0),
-            data.get("temperature_c", 0),
-            data.get("humidity_percent", 0),
-            data.get("soil_n", 0),
-            data.get("soil_p", 0),
-            data.get("soil_k", 0),
-            data.get("area_hectare", 0)
-        ]], columns=['Rainfall_mm_x', 'Temperature_C_x', 'Humidity_Percent', 
-                     'Soil_N', 'Soil_P', 'Soil_K', 'Area_hectare'])
+    district = str(data.get("district", "")).strip().upper()
+    supported_districts = model_metadata["districts"]
+    if district not in supported_districts:
+        return {
+            "error": "Select a district supported by the Maharashtra soybean model",
+            "status": "error",
+        }
 
-        prediction = model.predict(features_df)[0]
-        return {
-            "yield_kg_per_hectare": round(float(prediction), 2),
-            "status": "success"
-        }
-    except Exception as e:
-        return {
-            "error": str(e),
-            "status": "error"
-        }
+    features = {
+        "district": district,
+        "rainfall_mm": float(data["rainfall_mm"]),
+        "temperature_c": float(data["temperature_c"]),
+        "humidity_percent": float(data["humidity_percent"]),
+    }
+    features_df = pd.DataFrame([features])
+    predicted_yield = max(0.0, float(model.predict(features_df)[0]))
+    area_hectare = float(data["area_hectare"])
+
+    warnings = []
+    for feature, value in features.items():
+        if feature == "district":
+            continue
+        lower, upper = model_metadata["input_ranges_p05_p95"][feature]
+        if value < lower or value > upper:
+            warnings.append(
+                f"{feature.replace('_', ' ').capitalize()} is outside the "
+                "central range of the historical training data."
+            )
+
+    return {
+        "yield_kg_per_hectare": round(predicted_yield, 2),
+        "estimated_total_production_kg": round(predicted_yield * area_hectare, 2),
+        "model_version": model_metadata["model_version"],
+        "validation_metrics": model_metadata["validation"],
+        "input_notice": (
+            "Soil N/P/K readings are recorded for your history but are not used "
+            "by this model because matching historical soil measurements were unavailable."
+        ),
+        "warnings": warnings,
+        "status": "success",
+    }
