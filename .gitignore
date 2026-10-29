@@ -26,7 +26,5 @@ data/
 
 settings.json
 .csv
-maharashtra_weather_dataset_large.csv
-maharashtra_soybean_dataset_large.csv
 model1.ipynb
 soybean_model.pkl
